@@ -50,7 +50,15 @@ pub trait SidExt {
     fn set_ctrl(&mut self, idx: usize, cr:u8);
     fn set_ad(&mut self, idx: usize, ad:u8);
     fn set_sr(&mut self, idx: usize, ad:u8);
+
+    fn get_freq(&self, idx: usize) -> Option<u16>;
+    fn get_pw(&self, idx: usize) -> Option<u16>;
+    fn get_cr(&self, idx: usize) -> Option<u8>;
+    fn get_ad(&self, idx: usize) -> Option<u8>;
+    fn get_sr(&self, idx: usize) -> Option<u8>;
+
     fn set_all(&mut self, idx: usize, freq:u16, pw:u16, ctrl:u8, ad:u8, sr:u8);
+    fn get_all(&self, idx: usize) -> Option<(u16, u16, u8, u8, u8)>;
     fn set_modvol(&mut self, vol:u8);
 }
 
@@ -146,12 +154,76 @@ impl SidExt for Sid {
         }
     }
 
+    fn get_freq(&self, idx: usize) -> Option<u16> { 
+        let fq = match idx {
+            0 => Some((self.read(reg::FREQHI1) as u16)<<8 | self.read(reg::FREQLO1) as u16),
+            1 => Some((self.read(reg::FREQHI2) as u16)<<8 | self.read(reg::FREQLO2) as u16),
+            2 => Some((self.read(reg::FREQHI3) as u16)<<8 | self.read(reg::FREQLO3) as u16),
+            _ => None,
+        };
+        fq
+    }
+
+    fn get_pw(&self, idx: usize) -> Option<u16> {
+        let pw = match idx {
+            0 => Some((self.read(reg::PWHI1) as u16)<<8 | self.read(reg::PWLO1) as u16),
+            1 => Some((self.read(reg::PWHI2) as u16)<<8 | self.read(reg::PWLO2) as u16),
+            2 => Some((self.read(reg::PWHI3) as u16)<<8 | self.read(reg::PWLO3) as u16),
+            _ => None,
+        };
+        pw
+    }
+
+    fn get_cr(&self, idx: usize) -> Option<u8> {
+        let cr = match idx {
+            0 => Some(self.read(reg::CR1)),
+            1 => Some(self.read(reg::CR2)),
+            2 => Some(self.read(reg::CR3)),
+            _ => None,
+        };
+        cr
+    }
+
+    fn get_ad(&self, idx: usize) -> Option<u8> {
+        let ad = match idx {
+            0 => Some(self.read(reg::AD1)),
+            1 => Some(self.read(reg::AD2)),
+            2 => Some(self.read(reg::AD3)),
+            _ => None,
+        };
+        ad
+    }
+
+    fn get_sr(&self, idx: usize) -> Option<u8> {
+        let sr = match idx {
+            0 => Some(self.read(reg::SR1)),
+            1 => Some(self.read(reg::SR2)),
+            2 => Some(self.read(reg::SR3)),
+            _ => None,
+        };
+        sr
+    }
+
     fn set_all(&mut self, idx: usize, freq:u16, pw:u16, ctrl:u8, ad:u8, sr:u8) {
         self.set_freq(idx, freq);
         self.set_pw(idx, pw);
         self.set_ctrl(idx, ctrl);
         self.set_ad(idx, ad);
         self.set_sr(idx, sr);
+    }
+
+    fn get_all(&self, idx: usize) -> Option<(u16, u16, u8, u8, u8)> {
+        let fq = self.get_freq(idx);
+        let pw = self.get_pw(idx);
+        let cr = self.get_cr(idx);
+        let ad = self.get_ad(idx);
+        let sr = self.get_sr(idx);
+
+        if fq.is_none() {
+            None
+        } else {
+            Some((fq.unwrap(), pw.unwrap(), cr.unwrap(), ad.unwrap(), sr.unwrap()))
+        }
     }
 
     fn set_modvol(&mut self, vol:u8) {

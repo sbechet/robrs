@@ -617,4 +617,11 @@ impl<'a> RhPlayer<'a> {
     self.sid.sample(delta, buffer, interleave)
   }
 
+  pub fn get_sid_regs(&self) -> Option<[(u16,u16,u8,u8,u8); 3]> {
+    let v0 = self.sid.get_all(0).unwrap();
+    let v1 = self.sid.get_all(1).unwrap();
+    let v2 = self.sid.get_all(2).unwrap();
+    Some([v0, v1, v2])
+  }
+
 }

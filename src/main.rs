@@ -58,6 +58,7 @@ fn main() {
         // alsa play
         let mut delta = 44100 / 2; // TODO:why?
         while delta > 0 {
+            //println!("debuging resid-rs: {:?}", player.get_sid_regs());
             let (samples, next_delta) = player.sample(delta, &mut buffer[..], 1);
             io.writei(&buffer[0..samples]).unwrap();
             delta = next_delta;
