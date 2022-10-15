@@ -1,13 +1,15 @@
 // Monty on the Run - Rob Hubbard - 1985 Gremlin Graphics
 
-use super::rhplayer::{Instrument, RhSongs, SidT, SoundFx};
+use super::rhplayer::{Instrument, MusicPlayer, RhSongs, SidT, SoundFx};
 #[allow(dead_code)]
 pub static RHSONGS: RhSongs = RhSongs {
+    musicplayer: MusicPlayer::MontyOnTheRun,
     total: TOTAL_SONGS,
     tracks: &TRACKS,
     patterns: &PATTERNS,
     instruments: &INSTRUMENTS,
     soundfx: &SOUNDFX,
+    resetspd: 1,
 };
 
 #[allow(dead_code)]
@@ -285,11 +287,9 @@ pub static PATTERN_17: [u8; 18] = [
     0xBF, 0x6, 0x56, 0x1F, 0x57, 0x1F, 0x56, 0x1F, 0x5B, 0x1F, 0x56, 0x1F, 0x57, 0x1F, 0x56, 0x1F,
     0x4F, 0xFF,
 ];
-
-// Found pitch bug or rip bug in original song? 0x68 -> 0x48
 #[allow(dead_code)]
 pub static PATTERN_18: [u8; 11] = [
-    0xBF, 0xC, 0x48, 0x7F, 0x7F, 0x7F, 0x7F, 0x7F, 0x7F, 0x7F, 0xFF,
+    0xBF, 0xC, 0x68, 0x7F, 0x7F, 0x7F, 0x7F, 0x7F, 0x7F, 0x7F, 0xFF,
 ];
 #[allow(dead_code)]
 pub static PATTERN_19: [u8; 18] = [

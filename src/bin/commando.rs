@@ -24,14 +24,16 @@ fn main() {
     let mut songs: Vec<usize> = vec![];
 
     println!("// Commando - Rob Hubbard - 1985 Elite\n");
-    println!("use super::rhplayer::{{ RhSongs, Instrument, SidT, SoundFx }};");
+    println!("use super::rhplayer::{{ RhSongs, Instrument, MusicPlayer, SidT, SoundFx }};");
     println!(r###"#[allow(dead_code)]
 pub static RHSONGS: RhSongs = RhSongs {{
+    musicplayer: MusicPlayer::Commando,
     total: TOTAL_SONGS,
     tracks: &TRACKS,
     patterns: &PATTERNS,
     instruments: &INSTRUMENTS,
-    soundfx: &SOUNDFX
+    soundfx: &SOUNDFX,
+    resetspd: 2,
 }};"###);
 
     // ********* TOTAL_SONGS

@@ -1,13 +1,15 @@
 // Commando - Rob Hubbard - 1985 Elite
 
-use super::rhplayer::{Instrument, RhSongs, SidT, SoundFx};
+use super::rhplayer::{Instrument, MusicPlayer, RhSongs, SidT, SoundFx};
 #[allow(dead_code)]
 pub static RHSONGS: RhSongs = RhSongs {
+    musicplayer: MusicPlayer::Commando,
     total: TOTAL_SONGS,
     tracks: &TRACKS,
     patterns: &PATTERNS,
     instruments: &INSTRUMENTS,
     soundfx: &SOUNDFX,
+    resetspd: 2,
 };
 
 #[allow(dead_code)]

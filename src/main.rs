@@ -1,25 +1,47 @@
-use alsa::pcm::{Access, Format, HwParams, State, PCM};
+use alsa::pcm::{Access, Format, HwParams, PCM};
 use alsa::{Direction, ValueOr};
-use std::thread::sleep;
-use std::time::{Duration, Instant};
+use clap::Parser;
 
 use resid::{ChipModel, SamplingMethod, Sid};
 mod rhplayer;
 use rhplayer::RhPlayer;
 
+use crate::rhplayer::MusicPlayer;
+
+mod song_commando;
 mod song_monty_on_the_run;
 
+#[derive(Parser)]
+#[command(author, version, about, long_about = None)]
+struct Cli {
+    /// Game name, can be montyontherun, commando
+    name: String,
+    /// song number, from 0 to ...
+    number: usize,
+}
+
 fn main() {
+    let cli = Cli::parse();
+
+    let rhsongs = match cli.name.as_str() {
+        "montyontherun" => Some(&song_monty_on_the_run::RHSONGS),
+        "commando" => Some(&song_commando::RHSONGS),
+        _ => None,
+    };
+
+    let number = cli.number;
+
     println!("\n\n\nHello my friends :)\n\n");
-    println!("Monty On The Run Playing just for u...");
+    println!("Rust Rewrite Rob Hubbard Player playing just for u...");
 
     let mut sid: Box<Sid> = Box::new(Sid::new(ChipModel::Mos6581));
-    // sid.set_sampling_parameters(SamplingMethod::Fast, 970200, 44100);   // TODO:970200=44100*22 not sure it's a good idea?
+
+    // sid.set_sampling_parameters(SamplingMethod::Fast,1022727, 44100);   // NTSC Commando?
     // sid.set_sampling_parameters(SamplingMethod::Interpolate, 985_248, 44100);    // TODO:not working?
     // sid.set_sampling_parameters(SamplingMethod::Resample, 985_248, 44100);   // TODO:not working?
     // sid.set_sampling_parameters(SamplingMethod::ResampleFast, 985_248, 44100);   // TODO:not working?
-    let mut player: Box<RhPlayer> =
-        Box::new(RhPlayer::new(&mut sid, &song_monty_on_the_run::RHSONGS));
+
+    let mut player: Box<RhPlayer> = Box::new(RhPlayer::new(&mut sid, rhsongs.unwrap()));
 
     /*
        0 : Monty on the run main theme
@@ -27,8 +49,9 @@ fn main() {
        2 : next song
        3<=x<=19 : SoundFX
     */
-    // TODO:not working for 13, 14, 16, 
-    player.init(0);
+    // TODO:not working for monty on the run: 13, 14, 16,
+    // TODO: not working for commando: 7, 12, 16
+    player.init(number);
 
     // Open default playback device
     let pcm: Box<PCM> = Box::new(PCM::new("default", Direction::Playback, false).unwrap());
@@ -58,7 +81,7 @@ fn main() {
         // alsa play
         let mut delta = 44100 / 2; // TODO:why?
         while delta > 0 {
-            //println!("debuging resid-rs: {:?}", player.get_sid_regs());
+            // println!("debuging resid-rs: {:?}", player.get_sids_regs());
             let (samples, next_delta) = player.sample(delta, &mut buffer[..], 1);
             io.writei(&buffer[0..samples]).unwrap();
             delta = next_delta;

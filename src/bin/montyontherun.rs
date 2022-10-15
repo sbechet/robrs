@@ -24,14 +24,16 @@ fn main() {
     let mut songs: Vec<usize> = vec![];
 
     println!("// Monty on the Run - Rob Hubbard - 1985 Gremlin Graphics\n");
-    println!("use super::rhplayer::{{ RhSongs, Instrument, SidT, SoundFx }};");
+    println!("use super::rhplayer::{{ RhSongs, Instrument, MusicPlayer, SidT, SoundFx }};");
     println!(r###"#[allow(dead_code)]
 pub static RHSONGS: RhSongs = RhSongs {{
+    musicplayer: MusicPlayer::MontyOnTheRun,
     total: TOTAL_SONGS,
     tracks: &TRACKS,
     patterns: &PATTERNS,
     instruments: &INSTRUMENTS,
-    soundfx: &SOUNDFX
+    soundfx: &SOUNDFX,
+    resetspd: 1,
 }};"###);
 
     // ********* TOTAL_SONGS
@@ -107,14 +109,14 @@ pub static RHSONGS: RhSongs = RhSongs {{
             }
             j += 1;
         }
-        // HACK debug an original note bug
-        if i == 18 {
-            if pattern[2] == 0x68 {
-                println!("\n\n// Found pitch bug or rip bug in original song? 0x68 -> 0x48");
-                pattern[2] = 0x48;  // 0x68 == 0b0110_1000. 0x48=0b0100_1000 only one bit difference and sound good.
-            }
-        }
-        // END HACK
+        // <DEBUG HACK> debug an original note bug
+        // if i == 18 {
+        //     if pattern[2] == 0x68 {
+        //         println!("\n\n// Found pitch bug or rip bug in original song? 0x68 -> 0x48");
+        //         pattern[2] = 0x48;  // 0x68 == 0b0110_1000. 0x48=0b0100_1000 only one bit difference and sound good.
+        //     }
+        // }
+        // </DEBUG HACK>
         println!("#[allow(dead_code)]");
         println!("pub static PATTERN_{}: [u8; {}] = {:#X?};",i,pattern.len(), pattern);
     }
