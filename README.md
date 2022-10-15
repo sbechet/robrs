@@ -10,7 +10,7 @@ To change music: edit `src/main.rs` and modify `player.init()` argument.
 - [ ] All SoundFX working (Monty On The Run 13, 14, 16 fx bugs counting from 0 kill resid-rs?) -- 7, 12, 16 for Commando
 - [ ] Add musics --- Help Welcome, copy and modify `bin/montyontherun.rs`
     - [ ] Confuzion
-    - [ ] Thing on a Spring
+    - [x] Thing on a Spring
     - [ ] Action Biker
     - [ ] Crazy Comets
     - [x] Commando

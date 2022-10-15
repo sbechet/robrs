@@ -51,7 +51,7 @@ pub struct RhSongs<'a> {
   pub tracks: &'a [&'a[&'a [u8]; 3]],
   pub patterns: &'a [&'a [u8]],
   pub instruments: &'a [Instrument],
-  pub soundfx: &'a [SoundFx; 16],
+  pub soundfx: &'a [SoundFx],
   pub resetspd: u8,
 
 }
