@@ -43,6 +43,7 @@ pub struct Instrument {
 pub enum MusicPlayer {
   MontyOnTheRun,
   Commando,
+  CrazyComets,
 }
 
 pub struct RhSongs<'a> {
@@ -276,7 +277,7 @@ impl<'a> RhPlayer<'a> {
         self.patoffset[track_idx] += 1;
       }
       // next byte is the note of the note: get the 'base frequency' here
-      let mut note = RhPlayer::assert_high_note(current_pattern[pattern_idx]); // GET
+      let note = RhPlayer::assert_high_note(current_pattern[pattern_idx]); // GET
       self.notenum[track_idx] = note;
 
       if self.engine_song_playing {
@@ -359,9 +360,10 @@ impl<'a> RhPlayer<'a> {
     let instr = &self.songs.instruments[instr_idx];
     let pulsevalue = instr.pulse_speed;
 
-    // See Commando code
+    // See Commando, Crazy Commets code
     if instr.fx&8 == 0 {
-      let new_pulse = instr.pulse_width + pulsevalue as u16 + freq_overflow as u16;
+      // println!("instr.fx commando code, overflow:{}", freq_overflow);
+      let new_pulse = instr.pulse_width + pulsevalue as u16 + freq_overflow as u16 | 0x40;
       self.instr_pulse_width[instr_idx] = new_pulse;
       self.sid.set_pw(track_idx, new_pulse);
       return;
@@ -454,10 +456,18 @@ impl<'a> RhPlayer<'a> {
           self.savefreq[track_idx] -= 0x0100;
         },
         MusicPlayer::Commando => {
-          if self.savefreq[track_idx] as usize + 0x0200 < 0x10000 {
-            self.savefreq[track_idx] += 0x0200;
+          if self.savelnthcc[track_idx]&0x1f > 2 {
+            if self.savefreq[track_idx] as usize + 0x0200 < 0x10000 {
+              self.savefreq[track_idx] += 0x0200;
+            }
           }
         },
+        MusicPlayer::CrazyComets => {
+          if self.savelnthcc[track_idx]&0x1f > 16 {
+            self.savefreq[track_idx] -= 0x0100;
+          }
+        },
+
       }
       self.sid.set_freq(track_idx, self.savefreq[track_idx]);
     }
@@ -483,7 +493,6 @@ impl<'a> RhPlayer<'a> {
   }
 
   fn soundfx(&mut self) {
-    let mut return_value = true;
     if !self.engine_up || self.engine_fx_play&Fx::Stop == Fx::Stop as u8 {
       return;
     }
@@ -654,6 +663,9 @@ impl<'a> RhPlayer<'a> {
     if song < self.songs.tracks.len() {
       // song
       self.current_tracks = self.songs.tracks[song];
+      if let MusicPlayer::CrazyComets = self.songs.musicplayer {
+        self.sid.set_resfilt(0);
+      }
       self.sid.set_ctrl(0, 0);
       self.sid.set_ctrl(1, 0);
       self.sid.set_ctrl(2, 0);

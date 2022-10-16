@@ -59,6 +59,7 @@ pub trait SidExt {
 
     fn set_all(&mut self, idx: usize, freq:u16, pw:u16, ctrl:u8, ad:u8, sr:u8);
     fn get_all(&self, idx: usize) -> Option<(u16, u16, u8, u8, u8)>;
+    fn set_resfilt(&mut self, resfilt:u8);
     fn set_modvol(&mut self, vol:u8);
 }
 
@@ -224,6 +225,10 @@ impl SidExt for Sid {
         } else {
             Some((fq.unwrap(), pw.unwrap(), cr.unwrap(), ad.unwrap(), sr.unwrap()))
         }
+    }
+
+    fn set_resfilt(&mut self, resfilt:u8) {
+        self.write(reg::RESFILT, resfilt);
     }
 
     fn set_modvol(&mut self, vol:u8) {

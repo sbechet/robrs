@@ -11,11 +11,12 @@ use crate::rhplayer::MusicPlayer;
 mod song_monty_on_the_run;
 mod song_commando;
 mod song_thing_on_a_spring;
+mod song_crazycomets;
 
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
 struct Cli {
-    /// Game name, can be montyontherun, commando, thingonaspring
+    /// Game name, can be montyontherun, commando, thingonaspring, crazycomets
     name: String,
     /// song number, from 0 to ...
     number: usize,
@@ -28,6 +29,7 @@ fn main() {
         "montyontherun" => Some(&song_monty_on_the_run::RHSONGS),
         "commando" => Some(&song_commando::RHSONGS),
         "thingonaspring" => Some(&song_thing_on_a_spring::RHSONGS),
+        "crazycomets" => Some(&song_crazycomets::RHSONGS),
         _ => None,
     };
 

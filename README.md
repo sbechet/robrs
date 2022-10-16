@@ -7,12 +7,12 @@ To change music: edit `src/main.rs` and modify `player.init()` argument.
 
 
 - [x] Player working for `Monty on the Run` three musics
-- [ ] All SoundFX working (Monty On The Run 13, 14, 16 fx bugs counting from 0 kill resid-rs?) -- 7, 12, 16 for Commando
+- [_] All SoundFX working (Monty On The Run 13, 14, 16 fx bugs counting from 0 kill resid-rs?) -- 7, 12, 16 for Commando
 - [ ] Add musics --- Help Welcome, copy and modify `bin/montyontherun.rs`
     - [ ] Confuzion
     - [x] Thing on a Spring
     - [ ] Action Biker
-    - [ ] Crazy Comets
+    - [_] Crazy Comets (RIP OK but hawful sound, dono why for now)
     - [x] Commando
     - [ ] Hunter Patrol
     - [ ] Chrimera
