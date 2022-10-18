@@ -4,13 +4,15 @@ To play: `cargo run --bin robrs -- --help`.
 
 WARN: I need help with sound accuracy. I don't know how `resid-rs` delta work.
 
+For now only 1985 musics works.
+
 - [x] Player working for `Monty on the Run` three musics
 - [_] All SoundFX working (Monty On The Run 13, 14, 16 fx bugs counting from 0 kill resid-rs?) -- 7, 12, 16 for Commando
 - [ ] Add musics --- Help Welcome, copy and modify `bin/montyontherun.rs`
-    - [ ] 1 - Delta (1987)
+    - [x] 1 - Delta (1987)
     - [x] 2 - Commando
     - [x] 3 - Zoids
-    - [ ] 4 - Sanxion (1986 Thalamus)
+    - [x] 4 - Sanxion (1986 Thalamus)
     - [ ] 5 - Lightforce (1986 Faster Than Light)
     - [ ] 6 - The Last V8 (1985 MAD/Mastertronic)
     - [ ] 7 - Spellbound (1986 MAD/Mastertronic)
