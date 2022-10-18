@@ -1,43 +1,46 @@
 Attempt to rewrite Rob Hubbard player reversing `Monty_on_the_Run.sid`.
 
-To play: `cargo run --bin robrs`.
+To play: `cargo run --bin robrs -- --help`.
 
-To change music: edit `src/main.rs` and modify `player.init()` argument.
-
-
+WARN: I need help with sound accuracy. I don't know how `resid-rs` delta work.
 
 - [x] Player working for `Monty on the Run` three musics
 - [_] All SoundFX working (Monty On The Run 13, 14, 16 fx bugs counting from 0 kill resid-rs?) -- 7, 12, 16 for Commando
 - [ ] Add musics --- Help Welcome, copy and modify `bin/montyontherun.rs`
+    - [ ] 1 - Delta (1987)
+    - [x] 2 - Commando
+    - [x] 3 - Zoids
+    - [ ] 4 - Sanxion (1986 Thalamus)
+    - [ ] 5 - Lightforce (1986 Faster Than Light)
+    - [ ] 6 - The Last V8 (1985 MAD/Mastertronic)
+    - [ ] 7 - Spellbound (1986 MAD/Mastertronic)
+    - [ ] 8 - Thrust (1986 Firebird)
+    - [ ] 9 - International Karate (1986 System 3)
+    - [ ] 10 - One Man & His Droid
+    - [x] 11 - Thing on a Spring
+    - [ ] 12 - Warhawk or Proteus (1986)
+    - [ ] 13 - Phantoms of the Asteroids (1986)
+    - [ ] 14 - Human Race
+    - [ ] 15 - Rasputin
+    - [ ] 12 - Master of Magic
+    - [ ] 13 - Formula 1 Simulator
+    - [x] 14 - Crazy Comets
     - [ ] Confuzion
-    - [x] Thing on a Spring
     - [ ] Action Biker
-    - [_] Crazy Comets (RIP OK but hawful sound, dono why for now)
-    - [x] Commando
     - [ ] Hunter Patrol
     - [ ] Chrimera
-    - [ ] The Last V8
     - [ ] Battle of  ritain
-    - [ ] Human Race
     - [ ] Zoids
-    - [ ] Rasputin,
-    - [ ] Master of Magic
-    - [ ] One Man & His Droid
     - [ ] Game Killer
     - [ ] Gerry the Germ
     - [ ] Geoff Capes
     - [ ] Strongman Challenge
-    - [ ] Phantoms of the Asteroids
     - [ ] Kentilla
-    - [ ] Thrust
-    - [ ] International Karate
-    - [ ] Spellbound
     - [ ] Bump Set and Spike
-    - [ ] Formula 1 Simulator
     - [ ] Video Poker
-    - [ ] Warhawk or Proteus
-    - [ ] ...
-    - [ ] ACE II seems to be a different code
+    - [ ] ACE II
+    - [ ] Knucklebuster (1986)
+    - [ ] Nemesis the warlok
 - [ ] Full rewrite using rust idomatics (look about `bitbybit` to play with it).
 - [ ] Create a RHPlayer file format?
 - [ ] Simplify code to be 100% no_std compatible (see `resid-rs` state)?

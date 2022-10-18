@@ -1,3 +1,4 @@
+use std::{thread, time};
 use alsa::pcm::{Access, Format, HwParams, PCM};
 use alsa::{Direction, ValueOr};
 use clap::Parser;
@@ -12,11 +13,12 @@ mod song_monty_on_the_run;
 mod song_commando;
 mod song_thing_on_a_spring;
 mod song_crazycomets;
+mod song_zoids;
 
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
 struct Cli {
-    /// Game name, can be montyontherun, commando, thingonaspring, crazycomets
+    /// Game name, can be montyontherun, commando, thingonaspring, crazycomets, zoids
     name: String,
     /// song number, from 0 to ...
     number: usize,
@@ -30,6 +32,7 @@ fn main() {
         "commando" => Some(&song_commando::RHSONGS),
         "thingonaspring" => Some(&song_thing_on_a_spring::RHSONGS),
         "crazycomets" => Some(&song_crazycomets::RHSONGS),
+        "zoids" =>  Some(&song_zoids::RHSONGS),
         _ => None,
     };
 
@@ -77,19 +80,23 @@ fn main() {
     pcm.sw_params(&swp).unwrap();
 
     let mut buffer = vec![0i16; 8192];
+    let mut freq = 50; // Hz
+    let wait_time = time::Duration::from_millis(freq);
     loop {
         player.play();
 
         // TODO: find solution to exit
 
         // alsa play
-        let mut delta = 44100 / 2; // TODO:why?
+        let mut delta:u32 = 44100 / 2; // TODO:why?
         while delta > 0 {
             // println!("debuging resid-rs: {:?}", player.get_sids_regs());
             let (samples, next_delta) = player.sample(delta, &mut buffer[..], 1);
             io.writei(&buffer[0..samples]).unwrap();
             delta = next_delta;
         }
+        // thread::sleep(wait_time);
+
     }
     // Wait for the stream to finish playback.
     pcm.drain().unwrap();

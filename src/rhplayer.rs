@@ -214,10 +214,12 @@ impl<'a> RhPlayer<'a> {
     }
   }
 
+  
+
   fn assert_high_note(note: u8) -> u8 {
     let mut rnote= note;
-    if note >= 8*12 {
-      println!("note too high? {}", note);
+    if rnote >= 8*12 {
+      println!("note too high? {}", rnote);
     }
     // Stupid hack but what can i do?
     while rnote >= 8*12 {
@@ -277,6 +279,7 @@ impl<'a> RhPlayer<'a> {
         self.patoffset[track_idx] += 1;
       }
       // next byte is the note of the note: get the 'base frequency' here
+      // self.sid.print_note(current_pattern[pattern_idx]); print!(" {} {}", self.instrnr[track_idx], 1+self.lengthleft[track_idx]);
       let note = RhPlayer::assert_high_note(current_pattern[pattern_idx]); // GET
       self.notenum[track_idx] = note;
 
@@ -557,7 +560,9 @@ impl<'a> RhPlayer<'a> {
       // check whether a new note is needed 
       if self.speed == self.resetspd {
         if self.lengthleft[track_idx] == 0 {
+          // print!("{}: ", track_idx);
           self.get_new_note(track_idx);
+          // println!();
         } else {
           self.lengthleft[track_idx] -= 1;
           if self.engine_song_playing {

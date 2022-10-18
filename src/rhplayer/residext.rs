@@ -45,6 +45,8 @@ pub static NOTE_FREQ_HEX: [u16; 8*12] = [
 0x8B40, 0x9370, 0x9C40, 0xA578, 0xAF58, 0xB9C8, 0xC4E0, 0xD098, 0xDD08, 0xEA30, 0xF820, 0xFD2E]; // 7
 
 pub trait SidExt {
+    fn print_note(&self, note: u8);
+
     fn set_freq(&mut self, idx: usize, freq:u16);
     fn set_pw(&mut self, idx: usize, pw:u16);
     fn set_ctrl(&mut self, idx: usize, cr:u8);
@@ -63,7 +65,17 @@ pub trait SidExt {
     fn set_modvol(&mut self, vol:u8);
 }
 
+#[allow(dead_code)]
+pub static PR_NOTE: [&str; 12] = ["C-","C#","D-","D#","E-","F-","F#","G-","G#","A-","A#","B-"];
+
 impl SidExt for Sid {
+
+    fn print_note(&self, note: u8) {
+        let octave = note / 12;
+        let rnote = note % 12;
+        print!("{}{}", PR_NOTE[rnote as usize], octave);
+    }
+
     fn set_freq(&mut self, idx: usize, freq:u16) {
         match idx {
             0 => {
@@ -236,3 +248,4 @@ impl SidExt for Sid {
     }
 
 }
+
