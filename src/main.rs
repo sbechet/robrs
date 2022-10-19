@@ -14,11 +14,12 @@ mod song_commando;
 mod song_thing_on_a_spring;
 mod song_crazycomets;
 mod song_zoids;
+mod song_lastv8;
 
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
 struct Cli {
-    /// Game name, can be montyontherun, commando, thingonaspring, crazycomets, zoids
+    /// Game name, can be montyontherun, commando, thingonaspring, crazycomets, zoids, lastv8
     name: String,
     /// song number, from 0 to ...
     number: usize,
@@ -33,6 +34,7 @@ fn main() {
         "thingonaspring" => Some(&song_thing_on_a_spring::RHSONGS),
         "crazycomets" => Some(&song_crazycomets::RHSONGS),
         "zoids" =>  Some(&song_zoids::RHSONGS),
+        "lastv8" => Some(&song_lastv8::RHSONGS),
         _ => None,
     };
 

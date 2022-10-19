@@ -14,7 +14,7 @@ For now only 1985 musics works.
     - [x] 3 - Zoids
     - [x] 4 - Sanxion (1986 Thalamus)
     - [ ] 5 - Lightforce (1986 Faster Than Light)
-    - [ ] 6 - The Last V8 (1985 MAD/Mastertronic)
+    - [x] 6 - The Last V8 (1985 MAD/Mastertronic) (my first RSID :p)
     - [ ] 7 - Spellbound (1986 MAD/Mastertronic)
     - [ ] 8 - Thrust (1986 Firebird)
     - [ ] 9 - International Karate (1986 System 3)
@@ -43,6 +43,7 @@ For now only 1985 musics works.
     - [ ] ACE II
     - [ ] Knucklebuster (1986)
     - [ ] Nemesis the warlok
+- [ ] Convert to midi files 
 - [ ] Full rewrite using rust idomatics (look about `bitbybit` to play with it).
 - [ ] Create a RHPlayer file format?
 - [ ] Simplify code to be 100% no_std compatible (see `resid-rs` state)?
