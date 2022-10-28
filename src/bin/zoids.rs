@@ -20,7 +20,7 @@ fn main() {
     let mut songs: Vec<usize> = vec![];
 
     println!("// Zoids - Rob Hubbard - 1986 Martech\n");
-    println!("use super::rhplayer::{{ RhSongs, Instrument, MusicPlayer, SidT, SoundFx }};");
+    println!("use super::rhsongs::{{ RhSongs, Instrument, MusicPlayer, SidT, SoundFx }};");
     println!(r###"#[allow(dead_code)]
 pub static RHSONGS: RhSongs = RhSongs {{
     musicplayer: MusicPlayer::MontyOnTheRun,

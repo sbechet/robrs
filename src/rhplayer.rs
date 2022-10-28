@@ -7,55 +7,11 @@ use resid::Sid;
 use std::ops::{BitAnd, BitOr};
 pub mod residext;
 use residext::{ SidExt, NOTE_FREQ_HEX };
+use super::rhsongs::{ RhSongs, MusicPlayer };
 
-#[repr(C, packed)]
-pub struct SidT {
-  pub freq: u16,
-  pub pulse_width: u16,
-  pub ctrl: u8,
-  pub attack_and_decay_len: u8,
-  pub sustain_vol_and_release_len: u8,
-}
-
-pub struct SoundFx {
-  /*
-  incdec: 0bAABB_CCCC
-  AA : 0b00 : play current music freq at end of CCCC counter
-  BB : 0b10 : INC else DEC voice0 freq low part
-  CCCC : IncDec counter
-  */
-  pub incdec: u8,
-  pub voice0: SidT, // freq low part is used as note
-  pub voice1: SidT, // freq low part is 0bA_B_CCCCCC with A:voice0_ctrl, B:voice1_ctrl, CCCCCC:note_delta
-  pub sfx_note_dest: u8
-}
-
-pub struct Instrument {
-  pub pulse_width: u16,
-  pub ctrl_register: u8,
-  pub attack_and_decay: u8,
-  pub sustain_and_release: u8,
-  pub vibrato_depth: u8,
-  pub pulse_speed: u8,  // 0bAAA_BBBBB with A:speed and B:delay
-  pub fx: u8, // ABCD_EFGH : H:drum, G:skydive, F:octave_arpeggio, 3-5: fx_use -- commando:E=0:modify default pulse-width effect
-}
-
-pub enum MusicPlayer {
-  MontyOnTheRun,
-  Commando,
-  CrazyComets,
-}
-
-pub struct RhSongs<'a> {
-  pub musicplayer: MusicPlayer,
-  pub total: usize,
-  pub tracks: &'a [&'a[&'a [u8]; 3]],
-  pub patterns: &'a [&'a [u8]],
-  pub instruments: &'a [Instrument],
-  pub soundfx: &'a [SoundFx],
-  pub resetspd: u8,
-
-}
+pub mod note;
+pub mod noterh;
+pub mod patternrh;
 
 #[repr(u8)]
 #[derive(PartialEq)]
@@ -216,7 +172,7 @@ impl<'a> RhPlayer<'a> {
 
   
 
-  fn assert_high_note(note: u8) -> u8 {
+  fn assert_high_note(&mut self, track_idx: usize, note: u8) -> u8 {
     let mut rnote= note;
     if rnote >= 8*12 {
       println!("note too high? {}", rnote);
@@ -247,7 +203,7 @@ impl<'a> RhPlayer<'a> {
     let current_pattern = self.songs.patterns[patnum];
     self.portaval[track_idx] = 0;
     let mut pattern_idx = self.patoffset[track_idx] as usize;
-    self.appendfl = 0xff;
+    self.appendfl = 0b1111_1111;
     // 1st byte is the length of the note 0-31
     // 0x20 bit5 signals no release (see sndwork)
     // 0x40 bit6 signals appended note
@@ -256,7 +212,7 @@ impl<'a> RhPlayer<'a> {
     self.savelnthcc[track_idx] = templnthcc;
     self.lengthleft[track_idx] = templnthcc & 0x1f;
     if templnthcc & Note1::AppendedMask == Note1::AppendedMask as u8 {
-      self.appendfl -= 1; // append note
+      self.appendfl = 0b1111_1110; // append note
     } else {
       pattern_idx += 1;
       self.patoffset[track_idx] += 1;
@@ -280,7 +236,7 @@ impl<'a> RhPlayer<'a> {
       }
       // next byte is the note of the note: get the 'base frequency' here
       // self.sid.print_note(current_pattern[pattern_idx]); print!(" {} {}", self.instrnr[track_idx], 1+self.lengthleft[track_idx]);
-      let note = RhPlayer::assert_high_note(current_pattern[pattern_idx]); // GET
+      let note = self.assert_high_note(track_idx, current_pattern[pattern_idx]); // GET
       self.notenum[track_idx] = note;
 
       if self.engine_song_playing {
@@ -330,7 +286,7 @@ impl<'a> RhPlayer<'a> {
     if oscilatval > 3 {
       oscilatval ^= 7;
     }
-    let mut note = RhPlayer::assert_high_note(self.notenum[track_idx]); if note==8*12-1 { note=8*12-2 };
+    let mut note = self.assert_high_note(track_idx, self.notenum[track_idx]); if note==8*12-1 { note=8*12-2 };
     let freq0 = NOTE_FREQ_HEX[note as usize];
     let freq1 = NOTE_FREQ_HEX[note as usize+1];
     let mut freq_diff = freq1 - freq0;
@@ -490,7 +446,7 @@ impl<'a> RhPlayer<'a> {
         self.notenum[track_idx] + 12
       };
       // dump the corresponding frequencies
-      note = RhPlayer::assert_high_note(note);
+      note = self.assert_high_note(track_idx, note);
       self.sid.set_freq(track_idx, NOTE_FREQ_HEX[note as usize]);
     }
   }
@@ -629,8 +585,8 @@ impl<'a> RhPlayer<'a> {
     self.engine_fx_play = self.engine_fx_play & Fx::IdxMask; // Remove Stop, Configure and IncDec information
     let soundfx = &self.songs.soundfx[self.engine_fx_play as usize];
     self.sfx_incdec = soundfx.incdec;
-    self.sfx_note = RhPlayer::assert_high_note(soundfx.voice0.freq as u8);
-    self.sfx_note_dest = RhPlayer::assert_high_note(soundfx.sfx_note_dest);
+    self.sfx_note = self.assert_high_note(0, soundfx.voice0.freq as u8);
+    self.sfx_note_dest = self.assert_high_note(0, soundfx.sfx_note_dest);
 
     self.sfx_voices_ctrl = soundfx.voice1.freq as u8;
     self.sfx_note_delta = self.sfx_voices_ctrl & 0b0011_1111;

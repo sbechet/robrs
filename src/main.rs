@@ -7,7 +7,10 @@ use resid::{ChipModel, SamplingMethod, Sid};
 mod rhplayer;
 use rhplayer::RhPlayer;
 
-use crate::rhplayer::MusicPlayer;
+mod rhsongs;
+use rhsongs::RhSongs;
+
+use crate::rhsongs::MusicPlayer;
 
 mod song_monty_on_the_run;
 mod song_commando;
@@ -23,22 +26,11 @@ struct Cli {
     name: String,
     /// song number, from 0 to ...
     number: usize,
+    /// midi output
+    midi: Option<bool>
 }
 
-fn main() {
-    let cli = Cli::parse();
-
-    let rhsongs = match cli.name.as_str() {
-        "montyontherun" => Some(&song_monty_on_the_run::RHSONGS),
-        "commando" => Some(&song_commando::RHSONGS),
-        "thingonaspring" => Some(&song_thing_on_a_spring::RHSONGS),
-        "crazycomets" => Some(&song_crazycomets::RHSONGS),
-        "zoids" =>  Some(&song_zoids::RHSONGS),
-        "lastv8" => Some(&song_lastv8::RHSONGS),
-        _ => None,
-    };
-
-    let number = cli.number;
+fn sidplay(rhsongs: Option<&RhSongs>, number: usize) {
 
     println!("\n\n\nHello my friends :)\n\n");
     println!("Rust Rewrite Rob Hubbard Player playing just for u...");
@@ -102,4 +94,33 @@ fn main() {
     }
     // Wait for the stream to finish playback.
     pcm.drain().unwrap();
+}
+
+fn main() {
+    let cli = Cli::parse();
+
+    let rhsongs = match cli.name.as_str() {
+        "montyontherun" => Some(&song_monty_on_the_run::RHSONGS),
+        "commando" => Some(&song_commando::RHSONGS),
+        "thingonaspring" => Some(&song_thing_on_a_spring::RHSONGS),
+        "crazycomets" => Some(&song_crazycomets::RHSONGS),
+        "zoids" =>  Some(&song_zoids::RHSONGS),
+        "lastv8" => Some(&song_lastv8::RHSONGS),
+        _ => None,
+    };
+
+    let number = cli.number;
+
+    if cli.midi.unwrap_or(false) {
+        if rhsongs.is_some() {
+            rhsongs.unwrap().print_song(number);
+            rhsongs.unwrap().write_midi(number);
+            rhsongs.unwrap().write_all_patterns();
+            rhsongs.unwrap().write_channel_patterns(0, 0);
+            rhsongs.unwrap().write_channel_patterns(0, 1);
+            rhsongs.unwrap().write_channel_patterns(0, 2);
+        }
+    } else {
+        sidplay(rhsongs, number);
+    }
 }

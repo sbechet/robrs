@@ -1,6 +1,6 @@
 // ACE II - Rob Hubbard - 1987 Arcade
 
-use super::rhplayer::{ RhSongs, Instrument, SidT, SoundFx };
+use super::rhsongs::{ RhSongs, Instrument, SidT, SoundFx };
 #[allow(dead_code)]
 pub static RHSONGS: RhSongs = RhSongs {
     total: TOTAL_SONGS,

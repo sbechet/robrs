@@ -1,6 +1,6 @@
 // Crazy Comets - Rob Hubbard - 1985 Martech
 
-use super::rhplayer::{ RhSongs, Instrument, MusicPlayer, SidT, SoundFx };
+use super::rhsongs::{ RhSongs, Instrument, MusicPlayer, SidT, SoundFx };
 #[allow(dead_code)]
 pub static RHSONGS: RhSongs = RhSongs {
     musicplayer: MusicPlayer::CrazyComets,

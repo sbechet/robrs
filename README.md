@@ -42,7 +42,7 @@ For now only 1985 musics works.
     - [ ] ACE II
     - [ ] Knucklebuster (1986)
     - [ ] Nemesis the warlok
-- [ ] Convert to midi files 
+- [ ] Convert to midi files (started but will be difficult because multi line on same channel)
 - [ ] Full rewrite using rust idomatics (look about `bitbybit` to play with it).
 - [ ] Create a RHPlayer file format?
 - [ ] Simplify code to be 100% no_std compatible (see `resid-rs` state)?

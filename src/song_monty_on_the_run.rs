@@ -1,6 +1,6 @@
 // Monty on the Run - Rob Hubbard - 1985 Gremlin Graphics
 
-use super::rhplayer::{Instrument, MusicPlayer, RhSongs, SidT, SoundFx};
+use super::rhsongs::{Instrument, MusicPlayer, RhSongs, SidT, SoundFx};
 #[allow(dead_code)]
 pub static RHSONGS: RhSongs = RhSongs {
     musicplayer: MusicPlayer::MontyOnTheRun,
