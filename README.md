@@ -13,7 +13,7 @@ For now only 1985 musics works.
     - [x] 2 - Commando
     - [x] 3 - Zoids
     - [x] 4 - Sanxion (1986 Thalamus)
-    - [ ] 5 - Lightforce (1986 Faster Than Light)
+    - [x] 5 - Lightforce (1986 Faster Than Light)
     - [x] 6 - The Last V8 (1985 MAD/Mastertronic) (my first RSID :p)
     - [ ] 7 - Spellbound (1986 MAD/Mastertronic)
     - [ ] 8 - Thrust (1986 Firebird)
@@ -32,7 +32,6 @@ For now only 1985 musics works.
     - [ ] Hunter Patrol
     - [ ] Chrimera
     - [ ] Battle of  ritain
-    - [ ] Zoids
     - [ ] Game Killer
     - [ ] Gerry the Germ
     - [ ] Geoff Capes
