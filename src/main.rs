@@ -12,12 +12,13 @@ use rhsongs::RhSongs;
 
 use crate::rhsongs::MusicPlayer;
 
-mod song_monty_on_the_run;
 mod song_commando;
-mod song_thing_on_a_spring;
 mod song_crazycomets;
-mod song_zoids;
 mod song_lastv8;
+mod song_monty_on_the_run;
+mod song_spellbound;
+mod song_thing_on_a_spring;
+mod song_zoids;
 
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
@@ -100,12 +101,13 @@ fn main() {
     let cli = Cli::parse();
 
     let rhsongs = match cli.name.as_str() {
-        "montyontherun" => Some(&song_monty_on_the_run::RHSONGS),
         "commando" => Some(&song_commando::RHSONGS),
-        "thingonaspring" => Some(&song_thing_on_a_spring::RHSONGS),
         "crazycomets" => Some(&song_crazycomets::RHSONGS),
-        "zoids" =>  Some(&song_zoids::RHSONGS),
+        "montyontherun" => Some(&song_monty_on_the_run::RHSONGS),
         "lastv8" => Some(&song_lastv8::RHSONGS),
+        "spellbound" => Some(&song_spellbound::RHSONGS),
+        "thingonaspring" => Some(&song_thing_on_a_spring::RHSONGS),
+        "zoids" =>  Some(&song_zoids::RHSONGS),
         _ => None,
     };
 

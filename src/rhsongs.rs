@@ -43,9 +43,10 @@ pub struct Instrument {
 }
 
 pub enum MusicPlayer {
-  MontyOnTheRun,
   Commando,
   CrazyComets,
+  MontyOnTheRun,
+  SpellBound,
 }
 
 pub struct RhSongs<'a> {

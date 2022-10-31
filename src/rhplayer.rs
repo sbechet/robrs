@@ -219,17 +219,33 @@ impl<'a> RhPlayer<'a> {
       if templnthcc & Note1::ChgIntrOrPorta == Note1::ChgIntrOrPorta as u8 {
         // next byte is a new instrument or portamento coming up
         let instr_or_portamento = current_pattern[pattern_idx]; // GET
-        if instr_or_portamento & Note2::TypeMask == Note2::TypeMask as u8 {
-          self.portaval[track_idx] = instr_or_portamento;
-        } else {
-          self.instrnr[track_idx] = instr_or_portamento;
-          /* HACK because we can't write original instrument */
-          let instr = &self.songs.instruments[instr_or_portamento as usize];
-          // Only first access
-          if self.instr_pulse_width[instr_or_portamento as usize] == 0 {
-            self.instr_pulse_width[instr_or_portamento as usize] = instr.pulse_width;
+        match self.songs.musicplayer {
+          MusicPlayer::SpellBound => {
+            if instr_or_portamento & Note2::TypeMask == Note2::TypeMask as u8 {
+              self.instrnr[track_idx] = instr_or_portamento;
+              /* HACK because we can't write original instrument */
+              let instr = &self.songs.instruments[instr_or_portamento as usize];
+              // Only first access
+              if self.instr_pulse_width[instr_or_portamento as usize] == 0 {
+                self.instr_pulse_width[instr_or_portamento as usize] = instr.pulse_width;
+              }
+              /* HACK END */
+            }
+          },
+          _ => {
+            if instr_or_portamento & Note2::TypeMask == Note2::TypeMask as u8 {
+              self.portaval[track_idx] = instr_or_portamento;
+            } else {
+              self.instrnr[track_idx] = instr_or_portamento;
+              /* HACK because we can't write original instrument */
+              let instr = &self.songs.instruments[instr_or_portamento as usize];
+              // Only first access
+              if self.instr_pulse_width[instr_or_portamento as usize] == 0 {
+                self.instr_pulse_width[instr_or_portamento as usize] = instr.pulse_width;
+              }
+              /* HACK END */
+            }
           }
-          /* HACK END */
         }
         pattern_idx += 1;
         self.patoffset[track_idx] += 1;
@@ -411,9 +427,6 @@ impl<'a> RhPlayer<'a> {
     // check if skydive needed this instr every 2nd vbl && check if skydive already complete
     if instr.fx&2 != 0 && self.counter&1 != 0 && self.savefreq[track_idx]>>8!= 0 {
       match self.songs.musicplayer {
-        MusicPlayer::MontyOnTheRun => {
-          self.savefreq[track_idx] -= 0x0100;
-        },
         MusicPlayer::Commando => {
           if self.savelnthcc[track_idx]&0x1f > 2 {
             if self.savefreq[track_idx] as usize + 0x0200 < 0x10000 {
@@ -426,7 +439,14 @@ impl<'a> RhPlayer<'a> {
             self.savefreq[track_idx] -= 0x0100;
           }
         },
-
+        MusicPlayer::MontyOnTheRun => {
+          self.savefreq[track_idx] -= 0x0100;
+        },
+        MusicPlayer::SpellBound => {
+          if self.counter&3 != 0 {
+            self.savefreq[track_idx] += 0x0100;
+          }
+        },
       }
       self.sid.set_freq(track_idx, self.savefreq[track_idx]);
     }

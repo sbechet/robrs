@@ -15,7 +15,7 @@ For now only 1985 musics works.
     - [x] 4 - Sanxion (1986 Thalamus)
     - [x] 5 - Lightforce (1986 Faster Than Light)
     - [x] 6 - The Last V8 (1985 MAD/Mastertronic) (my first RSID :p)
-    - [ ] 7 - Spellbound (1986 MAD/Mastertronic)
+    - [x] 7 - Spellbound (1986 MAD/Mastertronic)
     - [ ] 8 - Thrust (1986 Firebird)
     - [ ] 9 - International Karate (1986 System 3)
     - [ ] 10 - One Man & His Droid
