@@ -22,7 +22,7 @@ For now only 1985 musics works.
     - [x] 11 - Thing on a Spring
     - [ ] 12 - Warhawk or Proteus (1986)
     - [ ] 13 - Phantoms of the Asteroids (1986)
-    - [ ] 14 - Human Race
+    - [x] 14 - Human Race
     - [ ] 15 - Rasputin
     - [ ] 12 - Master of Magic
     - [ ] 13 - Formula 1 Simulator
