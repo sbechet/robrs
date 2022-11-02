@@ -85,7 +85,8 @@ impl BitOr<Fx> for u8 {
 pub struct RhPlayer<'a> {
   sid:        &'a mut Sid,
   songs:      &'a RhSongs<'a>,
-  instr_pulse_width: Vec<u16>, // HACK
+  instr_pw: Vec<u16>, // HACK
+  instr_pwc: Vec<u16>, // Spellbound code
   current_tracks: &'a[&'a[u8]; 3],
   posoffset : [u8; 3],
   patoffset : [u8; 3],
@@ -103,6 +104,11 @@ pub struct RhPlayer<'a> {
   savefreq  : [u16; 3],
   portaval  : [u8; 3],
   counter   : u8,
+
+  vibstate1  : [i8; 3],  // Spellbound code
+  vibstate2  : [i8; 3],  // Spellbound code
+  vibstate3  : [i8; 3],  // Spellbound code
+  vibrdepth  : u8,       // Spellbound code
 
   engine_up: bool,
   engine_fx_play: u8, // 0x80 = end of soundfx, 0x40 = configure soundfx, low quartet = idx
@@ -130,7 +136,8 @@ impl<'a> RhPlayer<'a> {
     RhPlayer {
       sid:        sid,
       songs:      songs,
-      instr_pulse_width: vec![0; songs.instruments.len()],  // HACK
+      instr_pw: vec![0; songs.instruments.len()],
+      instr_pwc: vec![0; songs.instruments.len()],
       current_tracks: songs.tracks[0],
       posoffset : [0,0,0],
       patoffset : [0,0,0],
@@ -148,6 +155,11 @@ impl<'a> RhPlayer<'a> {
       savefreq  : [0,0,0],
       portaval  : [0,0,0],
       counter   : 0,
+
+      vibstate1  : [0,0,0],  // Spellbound code
+      vibstate2  : [0,0,0],  // Spellbound code
+      vibstate3  : [0,0,0],  // Spellbound code
+      vibrdepth: 0,
 
       engine_up: true,
       engine_fx_play: 0xff,
@@ -211,6 +223,13 @@ impl<'a> RhPlayer<'a> {
     let templnthcc = current_pattern[pattern_idx]; // GET
     self.savelnthcc[track_idx] = templnthcc;
     self.lengthleft[track_idx] = templnthcc & 0x1f;
+
+    if let MusicPlayer::SpellBound = self.songs.musicplayer {
+      if 119 - self.posoffset[2] >= 15 {
+        self.sid.set_modvol(15);
+      }
+    }
+
     if templnthcc & Note1::AppendedMask == Note1::AppendedMask as u8 {
       self.appendfl = 0b1111_1110; // append note
     } else {
@@ -223,13 +242,9 @@ impl<'a> RhPlayer<'a> {
           MusicPlayer::SpellBound => {
             if instr_or_portamento & Note2::TypeMask == Note2::TypeMask as u8 {
               self.instrnr[track_idx] = instr_or_portamento;
-              /* HACK because we can't write original instrument */
               let instr = &self.songs.instruments[instr_or_portamento as usize];
-              // Only first access
-              if self.instr_pulse_width[instr_or_portamento as usize] == 0 {
-                self.instr_pulse_width[instr_or_portamento as usize] = instr.pulse_width;
-              }
-              /* HACK END */
+              self.instr_pwc[instr_or_portamento as usize] = 0;
+              self.instr_pw[instr_or_portamento as usize] = instr.pulse_width;
             }
           },
           _ => {
@@ -237,13 +252,8 @@ impl<'a> RhPlayer<'a> {
               self.portaval[track_idx] = instr_or_portamento;
             } else {
               self.instrnr[track_idx] = instr_or_portamento;
-              /* HACK because we can't write original instrument */
               let instr = &self.songs.instruments[instr_or_portamento as usize];
-              // Only first access
-              if self.instr_pulse_width[instr_or_portamento as usize] == 0 {
-                self.instr_pulse_width[instr_or_portamento as usize] = instr.pulse_width;
-              }
-              /* HACK END */
+              self.instr_pw[instr_or_portamento as usize] = instr.pulse_width;
             }
           }
         }
@@ -265,7 +275,7 @@ impl<'a> RhPlayer<'a> {
     let instr = &self.songs.instruments[self.instrnr[track_idx] as usize];
     if self.engine_song_playing {
       self.sid.set_ctrl(track_idx, instr.ctrl_register & self.appendfl);
-      self.sid.set_pw(track_idx, self.instr_pulse_width[self.instrnr[track_idx] as usize]); // instr.pulse_width; // HACK: use self.instr_pulse_width[]
+      self.sid.set_pw(track_idx, self.instr_pw[self.instrnr[track_idx] as usize]); // instr.pulse_width; // HACK: use self.instr_pw[]
       self.sid.set_ad(track_idx, instr.attack_and_decay);
       self.sid.set_sr(track_idx, instr.sustain_and_release);
 
@@ -291,18 +301,52 @@ impl<'a> RhPlayer<'a> {
     }
   }
 
+
+  fn vibrato_spellbound_internal(&mut self, track_idx:usize) {
+    self.vibstate2[track_idx]+=1;
+    if self.vibstate3[track_idx] < self.vibstate2[track_idx] {
+
+      self.vibstate2[track_idx] = self.vibstate3[track_idx];
+      self.vibstate1[track_idx]-=1;
+      self.vibstate2[track_idx]-=1;
+
+    }
+  }
+
   fn vibrato(&mut self, track_idx: usize) -> u8 {
     let mut rvalue = 0;
     let instr = &self.songs.instruments[self.instrnr[track_idx] as usize];
     if instr.vibrato_depth == 0 {
       return rvalue;
     }
-    // the counter's turned into an oscillating value (01233210)
-    let mut oscilatval = self.counter & 7;
-    if oscilatval > 3 {
-      oscilatval ^= 7;
-    }
-    let mut note = self.assert_high_note(track_idx, self.notenum[track_idx]); if note==8*12-1 { note=8*12-2 };
+
+    let oscilatval = if let MusicPlayer::SpellBound = self.songs.musicplayer {
+      self.vibstate3[track_idx] = (instr.vibrato_depth as i8 & 0b0_1111_000) >> 3;
+      self.vibrdepth = instr.vibrato_depth & 0b0_1111_111;
+
+      if self.vibstate1[track_idx] >= 0 {
+        self.vibrato_spellbound_internal(track_idx);
+      } else {
+        self.vibstate2[track_idx]-=1;
+        if self.vibstate2[track_idx] == 0 {
+          self.vibstate1[track_idx]+=1;
+          if self.vibstate1[track_idx] < 0 {
+            self.vibrato_spellbound_internal(track_idx);
+          }
+        }
+      }
+      self.vibstate3[track_idx]
+    } else {
+      // the counter's turned into an oscillating value (01233210)
+      let osc = self.counter as i8 &7;
+      if osc > 3 {
+        osc ^ 7
+      } else {
+        osc
+      }
+    };
+
+    let mut note = self.assert_high_note(track_idx, self.notenum[track_idx]); if note==8*12-1 { note=8*12-2 }; // HACK
     let freq0 = NOTE_FREQ_HEX[note as usize];
     let freq1 = NOTE_FREQ_HEX[note as usize+1];
     let mut freq_diff = freq1 - freq0;
@@ -324,6 +368,8 @@ impl<'a> RhPlayer<'a> {
       }
     }
     self.sid.set_freq(track_idx, tmpvfrq);
+
+
     return rvalue;
   }
 
@@ -339,7 +385,7 @@ impl<'a> RhPlayer<'a> {
     if instr.fx&8 == 0 {
       // println!("instr.fx commando code, overflow:{}", freq_overflow);
       let new_pulse = instr.pulse_width + pulsevalue as u16 + freq_overflow as u16 | 0x40;
-      self.instr_pulse_width[instr_idx] = new_pulse;
+      self.instr_pw[instr_idx] = new_pulse;
       self.sid.set_pw(track_idx, new_pulse);
       return;
     }
@@ -355,14 +401,14 @@ impl<'a> RhPlayer<'a> {
       self.pulsedelay[track_idx] = pulsevalue & 0b000_11111;
       let pulsespeed = (pulsevalue & 0b111_00000) as u16;
       let new_pulse = if self.pulsedir[track_idx] == 0 {
-        let new_pulse = self.instr_pulse_width[instr_idx] + pulsespeed;
+        let new_pulse = self.instr_pw[instr_idx] + pulsespeed;
         if new_pulse & 0x0f00 == 0x0e00 {
           self.pulsedir[track_idx] += 1;
         }
         new_pulse
       } else {
         // pulse down
-        let new_pulse = self.instr_pulse_width[instr_idx] - pulsespeed;
+        let new_pulse = self.instr_pw[instr_idx] - pulsespeed;
         if new_pulse & 0x0f00 == 0x0800 {
           // reaches min
           self.pulsedir[track_idx] -= 1;
@@ -371,7 +417,7 @@ impl<'a> RhPlayer<'a> {
       };
       // dump pulse width to chip and back into the instr data str
       // instr.pulse_width = new_pulse;  // must clone instr? :(
-      self.instr_pulse_width[instr_idx] = new_pulse;  // HACK
+      self.instr_pw[instr_idx] = new_pulse;  // HACK
       self.sid.set_pw(track_idx, new_pulse);
     }
   }
@@ -457,14 +503,27 @@ impl<'a> RhPlayer<'a> {
     //************ bit2:instrfx is an octave arpeggio pretty tame huh?
     // check if arpt needed
     if instr.fx&4 != 0 {
-      // only 2 arpt values
-      let mut note = if self.counter&1 == 0 {
-        // even, note
-        self.notenum[track_idx]
+      let mut note = if let MusicPlayer::SpellBound = self.songs.musicplayer {
+        let mask = if (instr.fx>>4)!=12 { 1 } else { 2 };
+        // only 2 arpt values
+        if self.counter&mask == 0 {
+          // even
+          self.notenum[track_idx] - (instr.fx>>4)
+        } else {
+          // odd
+          self.notenum[track_idx]
+        }
       } else {
-        // odd, change octave
-        self.notenum[track_idx] + 12
+        // only 2 arpt values
+        if self.counter&1 == 0 {
+          // even, note
+          self.notenum[track_idx]
+        } else {
+          // odd, change octave
+          self.notenum[track_idx] + 12
+        }
       };
+
       // dump the corresponding frequencies
       note = self.assert_high_note(track_idx, note);
       self.sid.set_freq(track_idx, NOTE_FREQ_HEX[note as usize]);
