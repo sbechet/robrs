@@ -108,7 +108,6 @@ pub struct RhPlayer<'a> {
   vibstate1  : [i8; 3],  // Spellbound code
   vibstate2  : [i8; 3],  // Spellbound code
   vibstate3  : [i8; 3],  // Spellbound code
-  vibrdepth  : u8,       // Spellbound code
 
   engine_up: bool,
   engine_fx_play: u8, // 0x80 = end of soundfx, 0x40 = configure soundfx, low quartet = idx
@@ -159,7 +158,6 @@ impl<'a> RhPlayer<'a> {
       vibstate1  : [0,0,0],  // Spellbound code
       vibstate2  : [0,0,0],  // Spellbound code
       vibstate3  : [0,0,0],  // Spellbound code
-      vibrdepth: 0,
 
       engine_up: true,
       engine_fx_play: 0xff,
@@ -320,9 +318,9 @@ impl<'a> RhPlayer<'a> {
       return rvalue;
     }
 
-    let oscilatval = if let MusicPlayer::SpellBound = self.songs.musicplayer {
+    if let MusicPlayer::SpellBound = self.songs.musicplayer {
       self.vibstate3[track_idx] = (instr.vibrato_depth as i8 & 0b0_1111_000) >> 3;
-      self.vibrdepth = instr.vibrato_depth & 0b0_1111_111;
+      let vibrdepth = instr.vibrato_depth & 0b0_1111_111;
 
       if self.vibstate1[track_idx] >= 0 {
         self.vibrato_spellbound_internal(track_idx);
@@ -335,40 +333,57 @@ impl<'a> RhPlayer<'a> {
           }
         }
       }
-      self.vibstate3[track_idx]
+      let mut note = self.assert_high_note(track_idx, self.notenum[track_idx]);
+      let freq0 = NOTE_FREQ_HEX[note as usize - 1];
+      let freq1 = NOTE_FREQ_HEX[note as usize];
+      let mut temp_vdif_freq_diff = freq1 - freq0;
+      let mut temp_freq_diff = freq1;
+      // freq_diff / 2u16.pow(instr.vibrato_depth as u32);
+      for _ in 0..vibrdepth {
+        temp_vdif_freq_diff /= 2;
+      }
+      for _ in 0..(self.vibstate3[track_idx]>>1) {
+        temp_freq_diff -= temp_vdif_freq_diff;
+      }
+      if self.savelnthcc[track_idx] & 0b00011111 != 0 {
+        for _ in 0..self.vibstate2[track_idx] {
+          temp_freq_diff += temp_vdif_freq_diff
+        }
+      }
+      self.sid.set_freq(track_idx, temp_freq_diff);
+
     } else {
+
       // the counter's turned into an oscillating value (01233210)
       let osc = self.counter as i8 &7;
-      if osc > 3 {
+      let oscilatval = if osc > 3 {
         osc ^ 7
       } else {
         osc
+      };
+      let mut note = self.assert_high_note(track_idx, self.notenum[track_idx]);
+      let freq0 = NOTE_FREQ_HEX[note as usize - 1]; // HACK to remove bug using spellbound method: (note - (note-1)), not ((note+1) - note)
+      let freq1 = NOTE_FREQ_HEX[note as usize];
+      let mut freq_diff = freq1 - freq0;
+      // freq_diff / 2u16.pow(instr.vibrato_depth as u32);
+      for _ in 0..instr.vibrato_depth {
+        freq_diff /= 2;
       }
-    };
-
-    let mut note = self.assert_high_note(track_idx, self.notenum[track_idx]); if note==8*12-1 { note=8*12-2 }; // HACK
-    let freq0 = NOTE_FREQ_HEX[note as usize];
-    let freq1 = NOTE_FREQ_HEX[note as usize+1];
-    let mut freq_diff = freq1 - freq0;
-    // freq_diff / 2u16.pow(instr.vibrato_depth as u32);
-    for _ in 0..instr.vibrato_depth {
-      freq_diff /= 2;
-    }
-
-    let mut tmpvfrq = freq0;
-    if self.savelnthcc[track_idx] & 0x1f > 7 {
-      // vibrato if note length >= 8
-      for _ in 0..oscilatval {
-        if tmpvfrq as u32  + freq_diff as u32 > 65535 {
-          // XXX
-          println!("overflow for pulse_width_timbe / instr.fx&8 see Commando code?");
-          rvalue = 1;
+  
+      let mut tmpvfrq = freq0;
+      if self.savelnthcc[track_idx] & 0x1f > 7 {
+        // vibrato if note length >= 8
+        for _ in 0..oscilatval {
+          if tmpvfrq as u32  + freq_diff as u32 > 65535 {
+            // XXX
+            println!("overflow for pulse_width_timbe / instr.fx&8 see Commando code?");
+            rvalue = 1;
+          }
+          tmpvfrq += freq_diff;
         }
-        tmpvfrq += freq_diff;
       }
+      self.sid.set_freq(track_idx, tmpvfrq);
     }
-    self.sid.set_freq(track_idx, tmpvfrq);
-
 
     return rvalue;
   }
