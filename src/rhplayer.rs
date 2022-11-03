@@ -621,6 +621,10 @@ impl<'a> RhPlayer<'a> {
         } else {
           self.lengthleft[track_idx] -= 1;
           if self.engine_song_playing {
+            if self.notenum[track_idx] == 0 { 
+              println!("note == 0?");
+              continue;
+            }
             self.release(track_idx);
             self.vibrato(track_idx);
             self.pulse_width_timbre(track_idx);
@@ -632,6 +636,10 @@ impl<'a> RhPlayer<'a> {
         }
       } else {
         if self.engine_song_playing {
+          if self.notenum[track_idx] == 0 { 
+            println!("note == 0?");
+            continue;
+          }
           self.vibrato(track_idx);
           self.pulse_width_timbre(track_idx);
           self.portamento(track_idx);
