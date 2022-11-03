@@ -349,11 +349,10 @@ impl<'a> RhPlayer<'a> {
     return temp_freq_diff;
   }
 
-  fn vibrato(&mut self, track_idx: usize) -> u8 {
-    let mut rvalue = 0;
+  fn vibrato(&mut self, track_idx: usize) {
     let instr = &self.songs.instruments[self.instrnr[track_idx] as usize];
     if instr.vibrato_depth == 0 {
-      return rvalue;
+      return;
     }
 
     if let MusicPlayer::SpellBound = self.songs.musicplayer {
@@ -383,69 +382,66 @@ impl<'a> RhPlayer<'a> {
       if self.savelnthcc[track_idx] & 0x1f > 7 {
         // vibrato if note length >= 8
         for _ in 0..oscilatval {
-          if tmpvfrq as u32  + freq_diff as u32 > 65535 {
-            // XXX
-            println!("overflow for pulse_width_timbre / instr.fx&8 see Commando code?");
-            rvalue = 1;
-          }
           tmpvfrq += freq_diff;
         }
       }
       self.sid.set_freq(track_idx, tmpvfrq);
     }
 
-    return rvalue;
+    return;
   }
 
   // pulse-width timbre routine depending on the control/speed byte in the instrument datastructure, 
   // the pulse width is of course inc/decremented to produce timbre
   // strangely the delay value is also the size of the inc/decrements
-  fn pulse_width_timbre(&mut self, track_idx: usize, freq_overflow: u8) {
+  fn pulse_width_timbre(&mut self, track_idx: usize) {
     let instr_idx = self.instrnr[track_idx] as usize;
     let instr = &self.songs.instruments[instr_idx];
     let pulsevalue = instr.pulse_speed;
 
-    // See Commando, Crazy Commets code
+    let mask_lo: u8 = if let MusicPlayer::SpellBound = self.songs.musicplayer { 0b0000_1111 } else { 0b000_11111 };
+    let mask_hi: u8 = if let MusicPlayer::SpellBound = self.songs.musicplayer { 0b1111_0000 } else { 0b111_00000 };
+
     if instr.fx&8 == 0 {
-      // println!("instr.fx commando code, overflow:{}", freq_overflow);
-      let new_pulse = instr.pulse_width + pulsevalue as u16 + freq_overflow as u16 | 0x40;
-      self.instr_pw[instr_idx] = new_pulse;
-      self.sid.set_pw(track_idx, new_pulse);
-      return;
-    }
+      if pulsevalue == 0 {
+        return;
+      }
 
-    if pulsevalue == 0 {
-      return;
-    }
-
-    if self.pulsedelay[track_idx] != 0 {
-      self.pulsedelay[track_idx] -= 1;
-    } else {
-      // reset pulsedelay
-      self.pulsedelay[track_idx] = pulsevalue & 0b000_11111;
-      let pulsespeed = (pulsevalue & 0b111_00000) as u16;
-      let new_pulse = if self.pulsedir[track_idx] == 0 {
-        let new_pulse = self.instr_pw[instr_idx] + pulsespeed;
-        if new_pulse & 0x0f00 == 0x0e00 {
-          self.pulsedir[track_idx] += 1;
-        }
-        new_pulse
+      if self.pulsedelay[track_idx] != 0 {
+        self.pulsedelay[track_idx] -= 1;
       } else {
-        // pulse down
-        let new_pulse = self.instr_pw[instr_idx] - pulsespeed;
-        if new_pulse & 0x0f00 == 0x0800 {
-          // reaches min
-          self.pulsedir[track_idx] -= 1;
-        }
-        new_pulse
-      };
-      // dump pulse width to chip and back into the instr data str
-      // instr.pulse_width = new_pulse;  // must clone instr? :(
-      self.instr_pw[instr_idx] = new_pulse;  // HACK
+        // reset pulsedelay
+        self.pulsedelay[track_idx] = pulsevalue & mask_lo;
+
+        let pulsespeed = (pulsevalue & mask_hi) as u16;
+        let new_pulse = if self.pulsedir[track_idx] == 0 {
+          let new_pulse = self.instr_pw[instr_idx] + pulsespeed;
+          if new_pulse & 0x0f00 == 0x0e00 {
+            self.pulsedir[track_idx] += 1;
+          }
+          new_pulse
+        } else {
+          // pulse down
+          let new_pulse = self.instr_pw[instr_idx] - pulsespeed;
+          if new_pulse & 0x0f00 == 0x0800 {
+            // reaches min
+            self.pulsedir[track_idx] -= 1;
+          }
+          new_pulse
+        };
+        // dump pulse width to chip and back into the instr data str
+        // instr.pulse_width = new_pulse;  // must clone instr? :(
+        self.instr_pw[instr_idx] = new_pulse;  // HACK
+        self.sid.set_pw(track_idx, new_pulse);
+      }
+    } else {
+      // See Commando, Crazy Commets code
+      // println!("instr.fx commando code, overflow:{}", freq_overflow);
+      let new_pulse = instr.pulse_width + pulsevalue as u16;
+      self.instr_pw[instr_idx] = new_pulse;
       self.sid.set_pw(track_idx, new_pulse);
     }
   }
-
 
   // portemento routine
   fn portamento(&mut self, track_idx: usize) {
@@ -626,8 +622,8 @@ impl<'a> RhPlayer<'a> {
           self.lengthleft[track_idx] -= 1;
           if self.engine_song_playing {
             self.release(track_idx);
-            let freq_overflow = self.vibrato(track_idx);
-            self.pulse_width_timbre(track_idx,  freq_overflow);
+            self.vibrato(track_idx);
+            self.pulse_width_timbre(track_idx);
             self.portamento(track_idx);
             self.drums(track_idx);
             self.skydive(track_idx);
@@ -636,8 +632,8 @@ impl<'a> RhPlayer<'a> {
         }
       } else {
         if self.engine_song_playing {
-          let freq_overflow = self.vibrato(track_idx);
-          self.pulse_width_timbre(track_idx,  freq_overflow);
+          self.vibrato(track_idx);
+          self.pulse_width_timbre(track_idx);
           self.portamento(track_idx);
           self.drums(track_idx);
           self.skydive(track_idx);
