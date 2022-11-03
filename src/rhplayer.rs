@@ -467,9 +467,8 @@ impl<'a> RhPlayer<'a> {
     // don't bother if freq can't go any lower or if the note has finished
 
     //************ bit0:FX
-    if instr.fx & 1 != 0 && self.savefreq[track_idx]>>8 != 0 && self.lengthleft[track_idx] != 0 {
+    if instr.fx&1 != 0 && self.savefreq[track_idx]>>8 != 0 && self.lengthleft[track_idx] != 0 {
       let mut vctrl = self.voicectrl[track_idx] & 0xfe;
-      self.sid.set_freq(track_idx, self.savefreq[track_idx]);
       // check if this is the first vbl for this instrument-note
       if self.lengthleft[track_idx] >= self.savelnthcc[track_idx] & 0x1f {
         // first time: set noise
@@ -478,20 +477,25 @@ impl<'a> RhPlayer<'a> {
         // next vbls..
         self.savefreq[track_idx] -= 0x0100;
         if vctrl == 0 {
-          self.sid.set_freq(track_idx, self.savefreq[track_idx]);
           // set noise
           vctrl = 0x80;
         }
       }
+      self.sid.set_freq(track_idx, self.savefreq[track_idx]);
       self.sid.set_ctrl(track_idx, vctrl);
     }
   }
 
   fn skydive(&mut self, track_idx: usize) {
     let instr = &self.songs.instruments[self.instrnr[track_idx] as usize];
+    let ok_counter: bool = if let MusicPlayer::SpellBound = self.songs.musicplayer { 
+      self.counter&3 == 0
+    } else {
+      self.counter&1 != 0
+    };
     //************ bit1:Skydive - a long portamento-down from the note to zerofreq
     // check if skydive needed this instr every 2nd vbl && check if skydive already complete
-    if instr.fx&2 != 0 && self.counter&1 != 0 && self.savefreq[track_idx]>>8!= 0 {
+    if instr.fx&2 != 0 && ok_counter && self.savefreq[track_idx]>>8!= 0 {
       match self.songs.musicplayer {
         MusicPlayer::Commando => {
           if self.savelnthcc[track_idx]&0x1f > 2 {
@@ -509,9 +513,7 @@ impl<'a> RhPlayer<'a> {
           self.savefreq[track_idx] -= 0x0100;
         },
         MusicPlayer::SpellBound => {
-          if self.counter&3 != 0 {
             self.savefreq[track_idx] += 0x0100;
-          }
         },
       }
       self.sid.set_freq(track_idx, self.savefreq[track_idx]);
@@ -527,10 +529,8 @@ impl<'a> RhPlayer<'a> {
         let mask = if (instr.fx>>4)!=12 { 1 } else { 2 };
         // only 2 arpt values
         if self.counter&mask == 0 {
-          // even
           self.notenum[track_idx] - (instr.fx>>4)
         } else {
-          // odd
           self.notenum[track_idx]
         }
       } else {
