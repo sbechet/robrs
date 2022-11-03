@@ -7,6 +7,8 @@ use resid::Sid;
 use std::ops::{BitAnd, BitOr};
 pub mod residext;
 use residext::{ SidExt, NOTE_FREQ_HEX };
+use crate::rhsongs::Instrument;
+
 use super::rhsongs::{ RhSongs, MusicPlayer };
 
 pub mod note;
@@ -33,9 +35,9 @@ impl BitAnd<SongState> for u8 {
 enum Note1 {
   // NoteMask      = 0b0001_1111, // length of the note 0-31
   ReleaseMask = 0b0010_0000, // 0:no release
-  AppendedMask  = 0b0100_0000, // signal appended note
-  ChgIntrOrPorta        = 0b1000_0000, // new instrument or portamento coming up (2 or 3 bytes for note)
-  EndOfPattern  = 0b1111_1111,
+  AppendedMask = 0b0100_0000, // signal appended note
+  ChgIntrOrPorta = 0b1000_0000, // new instrument or portamento coming up (2 or 3 bytes for note)
+  EndOfPattern = 0b1111_1111,
 }
 
 impl BitAnd<Note1> for u8 {
@@ -85,8 +87,8 @@ impl BitOr<Fx> for u8 {
 pub struct RhPlayer<'a> {
   sid:        &'a mut Sid,
   songs:      &'a RhSongs<'a>,
-  instr_pw: Vec<u16>, // HACK
-  instr_pwc: Vec<u16>, // Spellbound code
+  instr_pw  : Vec<u16>, // HACK
+  instr_pwc : Vec<u16>, // Spellbound code
   current_tracks: &'a[&'a[u8]; 3],
   posoffset : [u8; 3],
   patoffset : [u8; 3],
@@ -105,11 +107,11 @@ pub struct RhPlayer<'a> {
   portaval  : [u8; 3],
   counter   : u8,
 
-  vibstate1  : [i8; 3],  // Spellbound code
-  vibstate2  : [i8; 3],  // Spellbound code
-  vibstate3  : [i8; 3],  // Spellbound code
+  vibincdec : [i8; 3],  // Spellbound code : 0=inc, -1=dec
+  vibosc    : [i8; 3],  // Spellbound code : oscilator value 0..depth
+  vibdepth  : [i8; 3],  // Spellbound code : depth
 
-  engine_up: bool,
+  engine_up : bool,
   engine_fx_play: u8, // 0x80 = end of soundfx, 0x40 = configure soundfx, low quartet = idx
   engine_song_playing: bool,
   sfx_note: u8,
@@ -155,9 +157,9 @@ impl<'a> RhPlayer<'a> {
       portaval  : [0,0,0],
       counter   : 0,
 
-      vibstate1  : [0,0,0],  // Spellbound code
-      vibstate2  : [0,0,0],  // Spellbound code
-      vibstate3  : [0,0,0],  // Spellbound code
+      vibincdec : [0,0,0],  // Spellbound code
+      vibosc    : [0,0,0],  // Spellbound code
+      vibdepth  : [0,0,0],  // Spellbound code
 
       engine_up: true,
       engine_fx_play: 0xff,
@@ -301,14 +303,50 @@ impl<'a> RhPlayer<'a> {
 
 
   fn vibrato_spellbound_internal(&mut self, track_idx:usize) {
-    self.vibstate2[track_idx]+=1;
-    if self.vibstate3[track_idx] < self.vibstate2[track_idx] {
+    self.vibosc[track_idx]+=1;
+    if self.vibdepth[track_idx] < self.vibosc[track_idx] {
 
-      self.vibstate2[track_idx] = self.vibstate3[track_idx];
-      self.vibstate1[track_idx]-=1;
-      self.vibstate2[track_idx]-=1;
+      self.vibosc[track_idx] = self.vibdepth[track_idx];
+      self.vibincdec[track_idx]-=1;
+      self.vibosc[track_idx]-=1;
 
     }
+  }
+
+
+  fn vibrato_spellbound(&mut self, instr:&Instrument, track_idx:usize) -> u16 {
+    self.vibdepth[track_idx] = (instr.vibrato_depth as i8 & 0b0_1111_000) >> 3;
+    let vibrdepth = instr.vibrato_depth & 0b0_1111_111;
+
+    if self.vibincdec[track_idx] >= 0 {
+      self.vibrato_spellbound_internal(track_idx);
+    } else {
+      self.vibosc[track_idx]-=1;
+      if self.vibosc[track_idx] == 0 {
+        self.vibincdec[track_idx]+=1;
+        if self.vibincdec[track_idx] < 0 {
+          self.vibrato_spellbound_internal(track_idx);
+        }
+      }
+    }
+    let note = self.assert_high_note(track_idx, self.notenum[track_idx]);
+    let freq0 = NOTE_FREQ_HEX[note as usize - 1];
+    let freq1 = NOTE_FREQ_HEX[note as usize];
+    let mut temp_vdif_freq_diff = freq1 - freq0;
+    let mut temp_freq_diff = freq1;
+    // freq_diff / 2u16.pow(instr.vibrato_depth as u32);
+    for _ in 0..vibrdepth {
+      temp_vdif_freq_diff /= 2;
+    }
+    for _ in 0..(self.vibdepth[track_idx]>>1) {
+      temp_freq_diff -= temp_vdif_freq_diff;
+    }
+    if self.savelnthcc[track_idx] & 0b00011111 != 0 {
+      for _ in 0..self.vibosc[track_idx] {
+        temp_freq_diff += temp_vdif_freq_diff
+      }
+    }
+    return temp_freq_diff;
   }
 
   fn vibrato(&mut self, track_idx: usize) -> u8 {
@@ -319,41 +357,12 @@ impl<'a> RhPlayer<'a> {
     }
 
     if let MusicPlayer::SpellBound = self.songs.musicplayer {
-      self.vibstate3[track_idx] = (instr.vibrato_depth as i8 & 0b0_1111_000) >> 3;
-      let vibrdepth = instr.vibrato_depth & 0b0_1111_111;
 
-      if self.vibstate1[track_idx] >= 0 {
-        self.vibrato_spellbound_internal(track_idx);
-      } else {
-        self.vibstate2[track_idx]-=1;
-        if self.vibstate2[track_idx] == 0 {
-          self.vibstate1[track_idx]+=1;
-          if self.vibstate1[track_idx] < 0 {
-            self.vibrato_spellbound_internal(track_idx);
-          }
-        }
-      }
-      let mut note = self.assert_high_note(track_idx, self.notenum[track_idx]);
-      let freq0 = NOTE_FREQ_HEX[note as usize - 1];
-      let freq1 = NOTE_FREQ_HEX[note as usize];
-      let mut temp_vdif_freq_diff = freq1 - freq0;
-      let mut temp_freq_diff = freq1;
-      // freq_diff / 2u16.pow(instr.vibrato_depth as u32);
-      for _ in 0..vibrdepth {
-        temp_vdif_freq_diff /= 2;
-      }
-      for _ in 0..(self.vibstate3[track_idx]>>1) {
-        temp_freq_diff -= temp_vdif_freq_diff;
-      }
-      if self.savelnthcc[track_idx] & 0b00011111 != 0 {
-        for _ in 0..self.vibstate2[track_idx] {
-          temp_freq_diff += temp_vdif_freq_diff
-        }
-      }
+      let temp_freq_diff = self.vibrato_spellbound(instr, track_idx);
       self.sid.set_freq(track_idx, temp_freq_diff);
 
     } else {
-
+      // See Monty on the Run code
       // the counter's turned into an oscillating value (01233210)
       let osc = self.counter as i8 &7;
       let oscilatval = if osc > 3 {
@@ -376,7 +385,7 @@ impl<'a> RhPlayer<'a> {
         for _ in 0..oscilatval {
           if tmpvfrq as u32  + freq_diff as u32 > 65535 {
             // XXX
-            println!("overflow for pulse_width_timbe / instr.fx&8 see Commando code?");
+            println!("overflow for pulse_width_timbre / instr.fx&8 see Commando code?");
             rvalue = 1;
           }
           tmpvfrq += freq_diff;
