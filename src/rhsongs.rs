@@ -72,6 +72,10 @@ impl<'a> RhSongs<'a> {
     let song = self.tracks[song_idx];
     let pattern_list = song[channel];
     let pattern_num = pattern_list[pattern_list_idx] as usize;
+    if pattern_num > self.patterns.len() {
+      println!("Pattern seek error: idx:{}, channel:{}, pattern_list_idx:{}, {}/{}?",song_idx, channel, pattern_list_idx, pattern_num, self.patterns.len());
+      return None;
+    }
     let pattern = self.patterns[pattern_num];
     let pattern = Vec::uncompress(pattern, self.version);
     return pattern;
@@ -146,7 +150,7 @@ impl<'a> RhSongs<'a> {
     } else if sawtooth {
       println!("sawtooth:{:2}, a:{:2},d:{:2},s:{:2},r:{:2},pw:{}",instrnum,attack,decay,sustain,release,pw);
       // return 82; // Lead 2 (sawtooth wave)
-    } else {
+    } else if triangle {
       println!("triangle:{:2}, a:{:2},d:{:2},s:{:2},r:{:2},pw:{}",instrnum,attack,decay,sustain,release,pw);
       // return 3; // Electric Grand Piano
     }
@@ -181,16 +185,6 @@ impl<'a> RhSongs<'a> {
 
   }
 
-  pub fn fixe_note(note: u8) -> u8 {
-    // let mut rnote = note & 0b0_1111111;
-    let mut rnote = note;
-    // while rnote > 8*12 {
-    //   println!("rnote too high: {}", rnote);
-    //   rnote -= 12;
-    // }
-    return rnote;
-  }
-
   // return track and delta length
   pub fn get_track_midly<'b>(&self, delta_start: u32, dest_chan: u8, p:&Vec<Option<Vec<Note>>>) -> (Track<'b>, u32) {
     let mut delta: u32 = delta_start;
@@ -222,7 +216,7 @@ impl<'a> RhSongs<'a> {
           let mi = TrackEventKind::Midi {
             channel: num::u4::new(dest_chan),
             message: MidiMessage::NoteOn {
-              key: num::u7::new(Self::fixe_note(n.value)),
+              key: num::u7::new(n.value),
               vel: num::u7::new(100),
             },
           };
@@ -236,7 +230,7 @@ impl<'a> RhSongs<'a> {
             let mi = TrackEventKind::Midi {
               channel: num::u4::new(dest_chan),
               message: MidiMessage::NoteOff {
-                key: num::u7::new(Self::fixe_note(n.value)),
+                key: num::u7::new(n.value),
                 vel: num::u7::new(80),
               },
             };
@@ -294,7 +288,7 @@ impl<'a> RhSongs<'a> {
     };
     for i in 0..self.patterns.len() {
       let p = vec![Vec::uncompress(self.patterns[i], self.version)];
-      let (mut track, delta_next) = self.get_track_midly(0, 0, &p);
+      let (mut track, _delta_next) = self.get_track_midly(0, 0, &p);
       track.push(TrackEvent { delta: num::u28::new(0), kind: TrackEventKind::Meta(MetaMessage::EndOfTrack) });
       let mut smf = Smf::new(header);
       smf.tracks.push(track);
@@ -309,10 +303,8 @@ impl<'a> RhSongs<'a> {
       format: Format::SingleTrack,
       timing: Timing::Timecode(Fps::Fps25, 4),
     };
-    let mut smf = Smf::new(header);
-
     let p = self.get_song_channel(song_idx, channel);
-    let (mut track, delta_next) = self.get_track_midly(0, channel as u8, &p);
+    let (mut track, _delta_next) = self.get_track_midly(0, channel as u8, &p);
     track.push(TrackEvent { delta: num::u28::new(0), kind: TrackEventKind::Meta(MetaMessage::EndOfTrack) });
     let mut smf = Smf::new(header);
     smf.tracks.push(track);

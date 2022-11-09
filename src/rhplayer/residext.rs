@@ -26,15 +26,15 @@ pub mod reg {
     pub const FCHI: u8 = 0x16;
     pub const RESFILT: u8 = 0x17;
     pub const MODVOL: u8 = 0x18;
-    pub const POTX: u8 = 0x19;
-    pub const POTY: u8 = 0x1a;
-    pub const OSC3: u8 = 0x1b;
-    pub const ENV3: u8 = 0x1c;
+    // pub const POTX: u8 = 0x19;
+    // pub const POTY: u8 = 0x1a;
+    // pub const OSC3: u8 = 0x1b;
+    // pub const ENV3: u8 = 0x1c;
 }
 
 //   C,     C#,      D,     D#,      E,      F,     F#,      G,     G#,      A,     A#,      B
 #[allow(dead_code)]
-pub static NOTE_FREQ_HEX: [u16; 8*12] = [
+pub static NOTE_FREQ_HEX: [u16; 9*12] = [
  0x116,  0x127,  0x138,  0x14B,  0x15F,  0x173,  0x18A,  0x1A1,  0x1BA,  0x1D4,  0x1F0,  0x20E, // 0
  0x22D,  0x24E,  0x271,  0x296,  0x2BD,  0x2E7,  0x313,  0x342,  0x374,  0x3A9,  0x3E0,  0x41B, // 1
  0x45A,  0x49B,  0x4E2,  0x52C,  0x57B,  0x5CE,  0x627,  0x685,  0x6E8,  0x751,  0x7C1,  0x837, // 2
@@ -42,7 +42,8 @@ pub static NOTE_FREQ_HEX: [u16; 8*12] = [
 0x1168, 0x126E, 0x1388, 0x14AF, 0x15EB, 0x1739, 0x189C, 0x1A13, 0x1BA1, 0x1D46, 0x1F04, 0x20DC, // 4
 0x22D0, 0x24DC, 0x2710, 0x295E, 0x2BD6, 0x2E72, 0x3138, 0x3426, 0x3742, 0x3A8C, 0x3E08, 0x41B8, // 5
 0x45A0, 0x49B8, 0x4E20, 0x52BC, 0x57AC, 0x5CE4, 0x6270, 0x684C, 0x6E84, 0x7518, 0x7C10, 0x8370, // 6
-0x8B40, 0x9370, 0x9C40, 0xA578, 0xAF58, 0xB9C8, 0xC4E0, 0xD098, 0xDD08, 0xEA30, 0xF820, 0xFD2E]; // 7
+0x8B40, 0x9370, 0x9C40, 0xA578, 0xAF58, 0xB9C8, 0xC4E0, 0xD098, 0xDD08, 0xEA30, 0xF820, 0xFD2E, // 7
+0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF]; // 8 HACK to remove array overflow...
 
 pub trait SidExt {
     fn print_note(&self, note: u8);
@@ -61,8 +62,12 @@ pub trait SidExt {
 
     fn set_all(&mut self, idx: usize, freq:u16, pw:u16, ctrl:u8, ad:u8, sr:u8);
     fn get_all(&self, idx: usize) -> Option<(u16, u16, u8, u8, u8)>;
+
+    fn get_fc(&self) -> u16;
+    fn set_fc(&mut self, fc:u16);
     fn set_resfilt(&mut self, resfilt:u8);
     fn set_modvol(&mut self, vol:u8);
+
 }
 
 #[allow(dead_code)]
@@ -237,6 +242,16 @@ impl SidExt for Sid {
         } else {
             Some((fq.unwrap(), pw.unwrap(), cr.unwrap(), ad.unwrap(), sr.unwrap()))
         }
+    }
+
+    fn get_fc(&self) -> u16 {
+        (self.read(reg::FCHI) as u16)<<8 | self.read(reg::FCLO) as u16
+    }
+
+    fn set_fc(&mut self, fc:u16) {
+        self.write(reg::FCLO, fc as u8);
+        self.write(reg::FCHI, (fc>>8) as u8);
+
     }
 
     fn set_resfilt(&mut self, resfilt:u8) {
