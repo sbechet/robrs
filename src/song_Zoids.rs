@@ -1,20 +1,19 @@
 // Zoids - Rob Hubbard - 1986 Martech
 
-use super::rhsongs::{ RhSongs, Instrument, MusicPlayer, SidT, SoundFx };
+use super::rhsongs::{ RhSongs, Instrument, SidT, SoundFx, InstrFx };
 #[allow(dead_code)]
-pub static RHSONGS: RhSongs = RhSongs {
-    musicplayer: MusicPlayer::MontyOnTheRun,
-    total: TOTAL_SONGS,
-    tracks: &TRACKS,
-    patterns: &PATTERNS,
-    instruments: &INSTRUMENTS,
-    soundfx: &SOUNDFX,
-    resetspd: 1,
-};
-
-
-#[allow(dead_code)]
-pub static TOTAL_SONGS: usize = 3;
+                pub static RHSONGS: RhSongs = RhSongs {
+                    version: 20,
+                    total: 3,
+                    tracks: &TRACKS,
+                    patterns: &PATTERNS,
+                    instruments: &INSTRUMENTS,
+                    soundfx: &SOUNDFX,
+                    instrfx: &INSTRFX,
+                    resetspd: 1,
+                    skydive_v1_when: 0,
+                    skydive_v1_add: 0,
+                };
 
 
 #[allow(dead_code)]
@@ -1408,4 +1407,10 @@ pub static INSTRUMENTS: [ Instrument; 15] = [
 
 
 #[allow(dead_code)]
-pub static SOUNDFX: [ SoundFx; 0] = [];
+pub static SOUNDFX: [ SoundFx; 0] = [
+];
+
+
+#[allow(dead_code)]
+pub static INSTRFX: [ InstrFx; 0] = [
+];

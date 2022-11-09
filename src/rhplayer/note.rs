@@ -4,7 +4,7 @@ pub struct Note {
     pub value: u8,
     pub length: u16,
     pub instr: u8,
-    pub portamento: u8,
+    pub portamento: i16,
     pub release: bool,
 }
 

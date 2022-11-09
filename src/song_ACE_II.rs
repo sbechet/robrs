@@ -1,18 +1,19 @@
 // ACE II - Rob Hubbard - 1987 Arcade
 
-use super::rhsongs::{ RhSongs, Instrument, SidT, SoundFx };
+use super::rhsongs::{ RhSongs, Instrument, SidT, SoundFx, InstrFx };
 #[allow(dead_code)]
-pub static RHSONGS: RhSongs = RhSongs {
-    total: TOTAL_SONGS,
-    tracks: &TRACKS,
-    patterns: &PATTERNS,
-    instruments: &INSTRUMENTS,
-    soundfx: &SOUNDFX
-};
-
-
-#[allow(dead_code)]
-pub static TOTAL_SONGS: usize = 1;
+                pub static RHSONGS: RhSongs = RhSongs {
+                    version: 20,
+                    total: 1,
+                    tracks: &TRACKS,
+                    patterns: &PATTERNS,
+                    instruments: &INSTRUMENTS,
+                    soundfx: &SOUNDFX,
+                    instrfx: &INSTRFX,
+                    resetspd: 1,
+                    skydive_v1_when: 0,
+                    skydive_v1_add: 0,
+                };
 
 
 #[allow(dead_code)]
@@ -28,23 +29,19 @@ pub static TRACK_2: [u8; 121] = [1, 1, 1, 8, 8, 9, 8, 8, 11, 1, 1, 1, 8, 8, 9, 8
 
 
 #[allow(dead_code)]
-pub static TRACKS: [ [&[u8];3]; 1] = [
-    [&TRACK_0,&TRACK_1,&TRACK_2],
+pub static TRACKS: [ &[&[u8];3]; 1] = [
+    &[&TRACK_0,&TRACK_1,&TRACK_2],
 ];
 
 
 #[allow(dead_code)]
 pub static PATTERNS: [&[u8]; 38] = [
 &PATTERN_0,&PATTERN_1,&PATTERN_2,&PATTERN_3,&PATTERN_4,&PATTERN_5,&PATTERN_6,&PATTERN_7,&PATTERN_8,&PATTERN_9,&PATTERN_10,&PATTERN_11,&PATTERN_12,&PATTERN_13,&PATTERN_14,&PATTERN_15,&PATTERN_16,&PATTERN_17,&PATTERN_18,&PATTERN_19,&PATTERN_20,&PATTERN_21,&PATTERN_22,&PATTERN_23,&PATTERN_24,&PATTERN_25,&PATTERN_26,&PATTERN_27,&PATTERN_28,&PATTERN_29,&PATTERN_30,&PATTERN_31,&PATTERN_32,&PATTERN_33,&PATTERN_34,&PATTERN_35,&PATTERN_36,&PATTERN_37,];
-
-
 #[allow(dead_code)]
 pub static PATTERN_0: [u8; 2] = [
     0x5F,
     0xFF,
 ];
-
-
 #[allow(dead_code)]
 pub static PATTERN_1: [u8; 28] = [
     0xBF,
@@ -76,8 +73,6 @@ pub static PATTERN_1: [u8; 28] = [
     0x17,
     0xFF,
 ];
-
-
 #[allow(dead_code)]
 pub static PATTERN_2: [u8; 29] = [
     0x83,
@@ -110,8 +105,6 @@ pub static PATTERN_2: [u8; 29] = [
     0x34,
     0xFF,
 ];
-
-
 #[allow(dead_code)]
 pub static PATTERN_3: [u8; 67] = [
     0x47,
@@ -182,8 +175,6 @@ pub static PATTERN_3: [u8; 67] = [
     0x30,
     0xFF,
 ];
-
-
 #[allow(dead_code)]
 pub static PATTERN_4: [u8; 22] = [
     0x83,
@@ -209,8 +200,6 @@ pub static PATTERN_4: [u8; 22] = [
     0x2F,
     0xFF,
 ];
-
-
 #[allow(dead_code)]
 pub static PATTERN_5: [u8; 30] = [
     0x83,
@@ -244,8 +233,6 @@ pub static PATTERN_5: [u8; 30] = [
     0x34,
     0xFF,
 ];
-
-
 #[allow(dead_code)]
 pub static PATTERN_6: [u8; 24] = [
     0x83,
@@ -273,8 +260,6 @@ pub static PATTERN_6: [u8; 24] = [
     0x1C,
     0xFF,
 ];
-
-
 #[allow(dead_code)]
 pub static PATTERN_7: [u8; 41] = [
     0x83,
@@ -319,8 +304,6 @@ pub static PATTERN_7: [u8; 41] = [
     0x2F,
     0xFF,
 ];
-
-
 #[allow(dead_code)]
 pub static PATTERN_8: [u8; 14] = [
     0x83,
@@ -338,8 +321,6 @@ pub static PATTERN_8: [u8; 14] = [
     0x1A,
     0xFF,
 ];
-
-
 #[allow(dead_code)]
 pub static PATTERN_9: [u8; 30] = [
     0x83,
@@ -373,8 +354,6 @@ pub static PATTERN_9: [u8; 30] = [
     0x17,
     0xFF,
 ];
-
-
 #[allow(dead_code)]
 pub static PATTERN_10: [u8; 41] = [
     0x83,
@@ -419,8 +398,6 @@ pub static PATTERN_10: [u8; 41] = [
     0x30,
     0xFF,
 ];
-
-
 #[allow(dead_code)]
 pub static PATTERN_11: [u8; 5] = [
     0x3F,
@@ -429,8 +406,6 @@ pub static PATTERN_11: [u8; 5] = [
     0x98,
     0xFF,
 ];
-
-
 #[allow(dead_code)]
 pub static PATTERN_12: [u8; 16] = [
     0x83,
@@ -450,8 +425,6 @@ pub static PATTERN_12: [u8; 16] = [
     0x2F,
     0xFF,
 ];
-
-
 #[allow(dead_code)]
 pub static PATTERN_13: [u8; 26] = [
     0x83,
@@ -481,8 +454,6 @@ pub static PATTERN_13: [u8; 26] = [
     0x47,
     0xFF,
 ];
-
-
 #[allow(dead_code)]
 pub static PATTERN_14: [u8; 25] = [
     0x83,
@@ -511,8 +482,6 @@ pub static PATTERN_14: [u8; 25] = [
     0x43,
     0xFF,
 ];
-
-
 #[allow(dead_code)]
 pub static PATTERN_15: [u8; 14] = [
     0x83,
@@ -530,8 +499,6 @@ pub static PATTERN_15: [u8; 14] = [
     0x21,
     0xFF,
 ];
-
-
 #[allow(dead_code)]
 pub static PATTERN_16: [u8; 21] = [
     0x43,
@@ -556,8 +523,6 @@ pub static PATTERN_16: [u8; 21] = [
     0x2D,
     0xFF,
 ];
-
-
 #[allow(dead_code)]
 pub static PATTERN_17: [u8; 23] = [
     0x83,
@@ -584,8 +549,6 @@ pub static PATTERN_17: [u8; 23] = [
     0x42,
     0xFF,
 ];
-
-
 #[allow(dead_code)]
 pub static PATTERN_18: [u8; 26] = [
     0x83,
@@ -615,8 +578,6 @@ pub static PATTERN_18: [u8; 26] = [
     0x2D,
     0xFF,
 ];
-
-
 #[allow(dead_code)]
 pub static PATTERN_19: [u8; 18] = [
     0x83,
@@ -638,8 +599,6 @@ pub static PATTERN_19: [u8; 18] = [
     0x32,
     0xFF,
 ];
-
-
 #[allow(dead_code)]
 pub static PATTERN_20: [u8; 14] = [
     0x83,
@@ -657,8 +616,6 @@ pub static PATTERN_20: [u8; 14] = [
     0x1F,
     0xFF,
 ];
-
-
 #[allow(dead_code)]
 pub static PATTERN_21: [u8; 14] = [
     0x83,
@@ -676,8 +633,6 @@ pub static PATTERN_21: [u8; 14] = [
     0x18,
     0xFF,
 ];
-
-
 #[allow(dead_code)]
 pub static PATTERN_22: [u8; 23] = [
     0x83,
@@ -704,8 +659,6 @@ pub static PATTERN_22: [u8; 23] = [
     0x34,
     0xFF,
 ];
-
-
 #[allow(dead_code)]
 pub static PATTERN_23: [u8; 23] = [
     0x83,
@@ -732,8 +685,6 @@ pub static PATTERN_23: [u8; 23] = [
     0x32,
     0xFF,
 ];
-
-
 #[allow(dead_code)]
 pub static PATTERN_24: [u8; 31] = [
     0x83,
@@ -768,8 +719,6 @@ pub static PATTERN_24: [u8; 31] = [
     0xBB,
     0xFF,
 ];
-
-
 #[allow(dead_code)]
 pub static PATTERN_25: [u8; 113] = [
     0xA0,
@@ -886,8 +835,6 @@ pub static PATTERN_25: [u8; 113] = [
     0xB7,
     0xFF,
 ];
-
-
 #[allow(dead_code)]
 pub static PATTERN_26: [u8; 14] = [
     0x1F,
@@ -905,8 +852,6 @@ pub static PATTERN_26: [u8; 14] = [
     0x26,
     0xFF,
 ];
-
-
 #[allow(dead_code)]
 pub static PATTERN_27: [u8; 14] = [
     0x1F,
@@ -924,8 +869,6 @@ pub static PATTERN_27: [u8; 14] = [
     0x1A,
     0xFF,
 ];
-
-
 #[allow(dead_code)]
 pub static PATTERN_28: [u8; 15] = [
     0x83,
@@ -944,8 +887,6 @@ pub static PATTERN_28: [u8; 15] = [
     0x30,
     0xFF,
 ];
-
-
 #[allow(dead_code)]
 pub static PATTERN_29: [u8; 124] = [
     0x47,
@@ -1073,8 +1014,6 @@ pub static PATTERN_29: [u8; 124] = [
     0x34,
     0xFF,
 ];
-
-
 #[allow(dead_code)]
 pub static PATTERN_30: [u8; 88] = [
     0x3,
@@ -1166,8 +1105,6 @@ pub static PATTERN_30: [u8; 88] = [
     0xC0,
     0xFF,
 ];
-
-
 #[allow(dead_code)]
 pub static PATTERN_31: [u8; 63] = [
     0x1,
@@ -1234,8 +1171,6 @@ pub static PATTERN_31: [u8; 63] = [
     0xC3,
     0xFF,
 ];
-
-
 #[allow(dead_code)]
 pub static PATTERN_32: [u8; 59] = [
     0x1,
@@ -1298,8 +1233,6 @@ pub static PATTERN_32: [u8; 59] = [
     0xB7,
     0xFF,
 ];
-
-
 #[allow(dead_code)]
 pub static PATTERN_33: [u8; 40] = [
     0x4E,
@@ -1343,8 +1276,6 @@ pub static PATTERN_33: [u8; 40] = [
     0x30,
     0xFF,
 ];
-
-
 #[allow(dead_code)]
 pub static PATTERN_34: [u8; 5] = [
     0x57,
@@ -1353,8 +1284,6 @@ pub static PATTERN_34: [u8; 5] = [
     0x42,
     0xFF,
 ];
-
-
 #[allow(dead_code)]
 pub static PATTERN_35: [u8; 20] = [
     0x43,
@@ -1378,8 +1307,6 @@ pub static PATTERN_35: [u8; 20] = [
     0x47,
     0xFF,
 ];
-
-
 #[allow(dead_code)]
 pub static PATTERN_36: [u8; 9] = [
     0x83,
@@ -1392,8 +1319,6 @@ pub static PATTERN_36: [u8; 9] = [
     0x47,
     0xFF,
 ];
-
-
 #[allow(dead_code)]
 pub static PATTERN_37: [u8; 19] = [
     0x43,
@@ -1435,4 +1360,9 @@ pub static INSTRUMENTS: [ Instrument; 10] = [
 
 #[allow(dead_code)]
 pub static SOUNDFX: [ SoundFx; 0] = [
+];
+
+
+#[allow(dead_code)]
+pub static INSTRFX: [ InstrFx; 0] = [
 ];

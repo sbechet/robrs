@@ -2,7 +2,6 @@
   Rh2Midi Sebastien Bechet
 */
 
-use std::{io, io::Write};
 use midly::{num, Header, Smf, Format, Timing, Fps, MetaMessage, Track, TrackEvent, TrackEventKind, MidiMessage };
 // use std::ops::{BitAnd, BitOr};
 use super::rhplayer::note::Note;
@@ -32,6 +31,17 @@ pub struct SoundFx {
   pub sfx_note_dest: u8
 }
 
+pub struct InstrFx {
+  pub vibdepth_note: u8,
+  pub arpt: u8,
+  pub skydive: u8,
+  pub arpt_counter: u8,
+  pub notenum: u8,
+  pub pw_minmax: u8,
+  pub resfilt: u8,
+  pub fchi: u8,
+}
+
 pub struct Instrument {
   pub pulse_width: u16,
   pub ctrl_register: u8,
@@ -42,21 +52,17 @@ pub struct Instrument {
   pub fx: u8, // ABCD_EFGH : H:drum, G:skydive, F:octave_arpeggio, 3-5: fx_use -- commando:E=0:modify default pulse-width effect
 }
 
-pub enum MusicPlayer {
-  Commando,
-  CrazyComets,
-  MontyOnTheRun,
-  SpellBound,
-}
-
 pub struct RhSongs<'a> {
-  pub musicplayer: MusicPlayer,
+  pub version: usize,
   pub total: usize,
   pub tracks: &'a [&'a[&'a [u8]; 3]],
   pub patterns: &'a [&'a [u8]],
   pub instruments: &'a [Instrument],
   pub soundfx: &'a [SoundFx],
+  pub instrfx: &'a [InstrFx],
   pub resetspd: u8,
+  pub skydive_v1_when: u8,
+  pub skydive_v1_add: i16,
 
 }
 
@@ -67,7 +73,7 @@ impl<'a> RhSongs<'a> {
     let pattern_list = song[channel];
     let pattern_num = pattern_list[pattern_list_idx] as usize;
     let pattern = self.patterns[pattern_num];
-    let pattern = Vec::uncompress(pattern);
+    let pattern = Vec::uncompress(pattern, self.version);
     return pattern;
   }
 
@@ -76,6 +82,7 @@ impl<'a> RhSongs<'a> {
     return song[channel].len() - 1;
   }
 
+  #[allow(dead_code)]
   pub fn is_track_restart(&self, song_idx: usize, channel: usize) -> bool {
     let len = self.get_track_len(song_idx, channel);
     let song = self.tracks[song_idx];
@@ -105,6 +112,7 @@ impl<'a> RhSongs<'a> {
     return patterns;
   }
 
+  #[allow(dead_code)]
   pub fn print_pattern(&self, song_idx: usize, channel: usize, pattern_list_idx: usize) {
     let pattern = self.get_pattern(song_idx, channel, pattern_list_idx);
     println!("song:{}, ch:{}, idx:{} = {:?}",song_idx, channel, pattern_list_idx, pattern);
@@ -190,9 +198,6 @@ impl<'a> RhSongs<'a> {
 
     for sn in p {
       if let Some(notes) = sn {
-        let mut instr_num = 0;
-        let mut oldn: &Note = &Note::new();
-
         for n in notes {
 
           // TEST:remove note too distant
@@ -205,11 +210,9 @@ impl<'a> RhSongs<'a> {
           // end remove
 
           if n.instr != 0 {
-            instr_num = n.instr;
-
             let mi = TrackEventKind::Midi {
               channel: num::u4::new(dest_chan),
-              message: MidiMessage::ProgramChange { program: num::u7::new(self.instr2gm(instr_num)) },
+              message: MidiMessage::ProgramChange { program: num::u7::new(self.instr2gm(n.instr)) },
             };
             let te = TrackEvent { delta: num::u28::new(delta), kind: mi };
             track.push(te);
@@ -290,7 +293,7 @@ impl<'a> RhSongs<'a> {
       timing: Timing::Timecode(Fps::Fps25, 4),
     };
     for i in 0..self.patterns.len() {
-      let p = vec![Vec::uncompress(self.patterns[i])];
+      let p = vec![Vec::uncompress(self.patterns[i], self.version)];
       let (mut track, delta_next) = self.get_track_midly(0, 0, &p);
       track.push(TrackEvent { delta: num::u28::new(0), kind: TrackEventKind::Meta(MetaMessage::EndOfTrack) });
       let mut smf = Smf::new(header);

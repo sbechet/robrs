@@ -1,20 +1,19 @@
 // Crazy Comets - Rob Hubbard - 1985 Martech
 
-use super::rhsongs::{ RhSongs, Instrument, MusicPlayer, SidT, SoundFx };
+use super::rhsongs::{ RhSongs, Instrument, SidT, SoundFx, InstrFx };
 #[allow(dead_code)]
-pub static RHSONGS: RhSongs = RhSongs {
-    musicplayer: MusicPlayer::CrazyComets,
-    total: TOTAL_SONGS,
-    tracks: &TRACKS,
-    patterns: &PATTERNS,
-    instruments: &INSTRUMENTS,
-    soundfx: &SOUNDFX,
-    resetspd: 2,
-};
-
-
-#[allow(dead_code)]
-pub static TOTAL_SONGS: usize = 3;
+                pub static RHSONGS: RhSongs = RhSongs {
+                    version: 10,
+                    total: 3,
+                    tracks: &TRACKS,
+                    patterns: &PATTERNS,
+                    instruments: &INSTRUMENTS,
+                    soundfx: &SOUNDFX,
+                    instrfx: &INSTRFX,
+                    resetspd: 2,
+                    skydive_v1_when: 16,
+                    skydive_v1_add: -256,
+                };
 
 
 #[allow(dead_code)]
@@ -2253,21 +2252,26 @@ pub static INSTRUMENTS: [ Instrument; 23] = [
 #[allow(dead_code)]
 pub static SOUNDFX: [ SoundFx; 1] = [
     SoundFx {
-            incdec: 0b01010000,
-            voice0: SidT {
-                freq: 0x0F50,
-                pulse_width: 640,
-                ctrl: 129,
-                attack_and_decay_len: 11,
-                sustain_vol_and_release_len: 0,
-            },
-            voice1: SidT {
-                freq: 0x0200,
-                pulse_width: 0,
-                ctrl: 21,
-                attack_and_decay_len: 11,
-                sustain_vol_and_release_len: 0,
-            },
-            sfx_note_dest: 0x20,
-        }, 
+                incdec: 0b01010000,
+                voice0: SidT {
+                    freq: 0x0F50,
+                    pulse_width: 640,
+                    ctrl: 129,
+                    attack_and_decay_len: 11,
+                    sustain_vol_and_release_len: 0,
+                },
+                voice1: SidT {
+                    freq: 0x0200,
+                    pulse_width: 0,
+                    ctrl: 21,
+                    attack_and_decay_len: 11,
+                    sustain_vol_and_release_len: 0,
+                },
+                sfx_note_dest: 0x20,
+            }, 
+];
+
+
+#[allow(dead_code)]
+pub static INSTRFX: [ InstrFx; 0] = [
 ];

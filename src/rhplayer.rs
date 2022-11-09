@@ -9,7 +9,7 @@ pub mod residext;
 use residext::{ SidExt, NOTE_FREQ_HEX };
 use crate::rhsongs::Instrument;
 
-use super::rhsongs::{ RhSongs, MusicPlayer };
+use super::rhsongs::{ RhSongs };
 
 pub mod note;
 pub mod noterh;
@@ -224,22 +224,22 @@ impl<'a> RhPlayer<'a> {
     self.savelnthcc[track_idx] = templnthcc;
     self.lengthleft[track_idx] = templnthcc & 0x1f;
 
-    if let MusicPlayer::SpellBound = self.songs.musicplayer {
+    if let 15 = self.songs.version {
       if 119 - self.posoffset[2] >= 15 {
         self.sid.set_modvol(15);
       }
     }
 
     if templnthcc & Note1::AppendedMask == Note1::AppendedMask as u8 {
-      self.appendfl = 0b1111_1110; // append note
+      self.appendfl = 255 - 1; // append note (begin dec)
     } else {
       pattern_idx += 1;
       self.patoffset[track_idx] += 1;
       if templnthcc & Note1::ChgIntrOrPorta == Note1::ChgIntrOrPorta as u8 {
         // next byte is a new instrument or portamento coming up
         let instr_or_portamento = current_pattern[pattern_idx]; // GET
-        match self.songs.musicplayer {
-          MusicPlayer::SpellBound => {
+        match self.songs.version {
+          15 => {
             if instr_or_portamento & Note2::TypeMask == Note2::TypeMask as u8 {
               self.instrnr[track_idx] = instr_or_portamento;
               let instr = &self.songs.instruments[instr_or_portamento as usize];
@@ -329,6 +329,8 @@ impl<'a> RhPlayer<'a> {
         }
       }
     }
+    // XXX in V2 code only if self.portaval[track_idx] == 0
+
     let note = self.assert_high_note(track_idx, self.notenum[track_idx]);
     let freq0 = NOTE_FREQ_HEX[note as usize - 1];
     let freq1 = NOTE_FREQ_HEX[note as usize];
@@ -341,11 +343,12 @@ impl<'a> RhPlayer<'a> {
     for _ in 0..(self.vibdepth[track_idx]>>1) {
       temp_freq_diff -= temp_vdif_freq_diff;
     }
-    if self.savelnthcc[track_idx] & 0b00011111 != 0 {
+    if self.savelnthcc[track_idx] & 0b000_11111 != 0 {
       for _ in 0..self.vibosc[track_idx] {
         temp_freq_diff += temp_vdif_freq_diff
       }
     }
+    // XXX in V2 code: self.savefreq[track_idx] = temp_freq_diff;
     return temp_freq_diff;
   }
 
@@ -355,7 +358,7 @@ impl<'a> RhPlayer<'a> {
       return;
     }
 
-    if let MusicPlayer::SpellBound = self.songs.musicplayer {
+    if let 15 = self.songs.version {
 
       let temp_freq_diff = self.vibrato_spellbound(instr, track_idx);
       self.sid.set_freq(track_idx, temp_freq_diff);
@@ -369,7 +372,7 @@ impl<'a> RhPlayer<'a> {
       } else {
         osc
       };
-      let mut note = self.assert_high_note(track_idx, self.notenum[track_idx]);
+      let note = self.assert_high_note(track_idx, self.notenum[track_idx]);
       let freq0 = NOTE_FREQ_HEX[note as usize - 1]; // HACK to remove bug using spellbound method: (note - (note-1)), not ((note+1) - note)
       let freq1 = NOTE_FREQ_HEX[note as usize];
       let mut freq_diff = freq1 - freq0;
@@ -399,8 +402,8 @@ impl<'a> RhPlayer<'a> {
     let instr = &self.songs.instruments[instr_idx];
     let pulsevalue = instr.pulse_speed;
 
-    let mask_lo: u8 = if let MusicPlayer::SpellBound = self.songs.musicplayer { 0b0000_1111 } else { 0b000_11111 };
-    let mask_hi: u8 = if let MusicPlayer::SpellBound = self.songs.musicplayer { 0b1111_0000 } else { 0b111_00000 };
+    let mask_lo: u8 = if let 15 = self.songs.version { 0b0000_1111 } else { 0b000_11111 };
+    let mask_hi: u8 = if let 15 = self.songs.version { 0b1111_0000 } else { 0b111_00000 };
 
     if instr.fx&8 == 0 {
       if pulsevalue == 0 {
@@ -444,6 +447,15 @@ impl<'a> RhPlayer<'a> {
   }
 
   // portemento routine
+  /*
+  v2 code:
+  portaval will be portaval_hi.
+  Two parts : portamento is (portaval_hi&63)<<8 + portaval_lo
+  if portaval_hi&0b11_000000==0b11_000000
+    freq = freq + portamento
+  else 
+    freq = freq - portamento
+  */
   fn portamento(&mut self, track_idx: usize) {
     if self.portaval[track_idx] == 0 {
       return;
@@ -488,7 +500,7 @@ impl<'a> RhPlayer<'a> {
 
   fn skydive(&mut self, track_idx: usize) {
     let instr = &self.songs.instruments[self.instrnr[track_idx] as usize];
-    let ok_counter: bool = if let MusicPlayer::SpellBound = self.songs.musicplayer { 
+    let ok_counter: bool = if let 15 = self.songs.version { 
       self.counter&3 == 0
     } else {
       self.counter&1 != 0
@@ -496,25 +508,20 @@ impl<'a> RhPlayer<'a> {
     //************ bit1:Skydive - a long portamento-down from the note to zerofreq
     // check if skydive needed this instr every 2nd vbl && check if skydive already complete
     if instr.fx&2 != 0 && ok_counter && self.savefreq[track_idx]>>8!= 0 {
-      match self.songs.musicplayer {
-        MusicPlayer::Commando => {
-          if self.savelnthcc[track_idx]&0x1f > 2 {
-            if self.savefreq[track_idx] as usize + 0x0200 < 0x10000 {
-              self.savefreq[track_idx] += 0x0200;
+
+      match self.songs.version {
+        10 | 15 => {
+          if self.savelnthcc[track_idx]&0x1f > self.songs.skydive_v1_when {
+            if (self.savefreq[track_idx] as isize + self.songs.skydive_v1_add as isize) < 0x10000 {
+              if (self.savefreq[track_idx] as isize + self.songs.skydive_v1_add as isize) > 0 {
+                self.savefreq[track_idx] = (self.savefreq[track_idx] as isize + self.songs.skydive_v1_add as isize) as u16;
+              }
             }
           }
         },
-        MusicPlayer::CrazyComets => {
-          if self.savelnthcc[track_idx]&0x1f > 16 {
-            self.savefreq[track_idx] -= 0x0100;
-          }
-        },
-        MusicPlayer::MontyOnTheRun => {
-          self.savefreq[track_idx] -= 0x0100;
-        },
-        MusicPlayer::SpellBound => {
-            self.savefreq[track_idx] += 0x0100;
-        },
+        _ => {
+          // TODO
+        }
       }
       self.sid.set_freq(track_idx, self.savefreq[track_idx]);
     }
@@ -525,7 +532,7 @@ impl<'a> RhPlayer<'a> {
     //************ bit2:instrfx is an octave arpeggio pretty tame huh?
     // check if arpt needed
     if instr.fx&4 != 0 {
-      let mut note = if let MusicPlayer::SpellBound = self.songs.musicplayer {
+      let mut note = if let 15 = self.songs.version {
         let mask = if (instr.fx>>4)!=12 { 1 } else { 2 };
         // only 2 arpt values
         if self.counter&mask == 0 {
@@ -731,9 +738,7 @@ impl<'a> RhPlayer<'a> {
     if song < self.songs.tracks.len() {
       // song
       self.current_tracks = self.songs.tracks[song];
-      if let MusicPlayer::CrazyComets = self.songs.musicplayer {
-        self.sid.set_resfilt(0);
-      }
+      self.sid.set_resfilt(0);
       self.sid.set_ctrl(0, 0);
       self.sid.set_ctrl(1, 0);
       self.sid.set_ctrl(2, 0);

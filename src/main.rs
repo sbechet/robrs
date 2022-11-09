@@ -10,20 +10,37 @@ use rhplayer::RhPlayer;
 mod rhsongs;
 use rhsongs::RhSongs;
 
-use crate::rhsongs::MusicPlayer;
-
-mod song_commando;
-mod song_crazycomets;
-mod song_lastv8;
-mod song_monty_on_the_run;
-mod song_spellbound;
-mod song_thing_on_a_spring;
-mod song_zoids;
+#[allow(non_snake_case)]
+mod song_ACE_II;
+#[allow(non_snake_case)]
+mod song_Commando;
+#[allow(non_snake_case)]
+mod song_Crazy_Comets;
+#[allow(non_snake_case)]
+mod song_Delta;
+#[allow(non_snake_case)]
+mod song_The_Human_Race;
+#[allow(non_snake_case)]
+mod song_The_Last_V8;
+#[allow(non_snake_case)]
+mod song_Lightforce;
+#[allow(non_snake_case)]
+mod song_Monty_on_the_Run;
+#[allow(non_snake_case)]
+mod song_Sanxion_Song_1;
+#[allow(non_snake_case)]
+mod song_Sanxion_Song_2;
+#[allow(non_snake_case)]
+mod song_Spellbound;
+#[allow(non_snake_case)]
+mod song_Thing_on_a_Spring;
+#[allow(non_snake_case)]
+mod song_Zoids;
 
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
 struct Cli {
-    /// Game name, can be montyontherun, commando, thingonaspring, crazycomets, zoids, lastv8
+    /// Game name, can be aceii, commando, crazycomets, delta, lastv8, lightforce, montyontherun, sanxion, sanxion2d, spellbound, thingonaspring, zoids
     name: String,
     /// song number, from 0 to ...
     number: usize,
@@ -101,13 +118,19 @@ fn main() {
     let cli = Cli::parse();
 
     let rhsongs = match cli.name.as_str() {
-        "commando" => Some(&song_commando::RHSONGS),
-        "crazycomets" => Some(&song_crazycomets::RHSONGS),
-        "montyontherun" => Some(&song_monty_on_the_run::RHSONGS),
-        "lastv8" => Some(&song_lastv8::RHSONGS),
-        "spellbound" => Some(&song_spellbound::RHSONGS),
-        "thingonaspring" => Some(&song_thing_on_a_spring::RHSONGS),
-        "zoids" =>  Some(&song_zoids::RHSONGS),
+        "aceii" => Some(&song_ACE_II::RHSONGS),
+        "commando" => Some(&song_Commando::RHSONGS),
+        "crazycomets" => Some(&song_Crazy_Comets::RHSONGS),
+        "delta" => Some(&song_Delta::RHSONGS),
+        "humanrace" => Some(&song_The_Human_Race::RHSONGS),
+        "lastv8" => Some(&song_The_Last_V8::RHSONGS),
+        "lightforce" => Some(&song_Lightforce::RHSONGS),
+        "montyontherun" => Some(&song_Monty_on_the_Run::RHSONGS),
+        "sanxion" => Some(&song_Sanxion_Song_1::RHSONGS),
+        "sanxion2d" => Some(&song_Sanxion_Song_2::RHSONGS),
+        "spellbound" => Some(&song_Spellbound::RHSONGS),
+        "thingonaspring" => Some(&song_Thing_on_a_Spring::RHSONGS),
+        "zoids" =>  Some(&song_Zoids::RHSONGS),
         _ => None,
     };
 
