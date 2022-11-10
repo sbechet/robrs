@@ -70,7 +70,13 @@ impl NoteRh for Note {
                     }
                     i+=1;
                 }
-                note.set_value(pattern[i]);
+                let value = if pattern[i]==104 { 
+                    println!("WARN/HACK: Avoid an original freq array overflow in monty on the run (base error? 0d104=0x68 near 0x65)");
+                    65 
+                } else { 
+                    pattern[i] 
+                };
+                note.set_value(value);
                 note.length = length as u16;
                 note.release = release;
                 i+=1;

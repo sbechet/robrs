@@ -183,12 +183,23 @@ impl<'a> RhPlayer<'a> {
   
 
   fn assert_high_note(&mut self, track_idx: usize, note: u8) -> u8 {
-    let rnote= note;
-    if rnote >= 8*12 {
-      println!("INFO: track_idx={}, octave {} too high (note {})", track_idx, rnote/12, rnote);
+    if note >= 8*12 {
+      // all from commando
+      let rnote = match note {
+        96 => 0,  // self.regoffsets[0], for crazycomet
+        97 => 0,  // self.regoffsets[0], for commando
+        98 => 12, // 8 for crazycomet, 16 for commando
+        100 => 3, // 3 for commando, // self.patoffset[0],
+        104 => 65, // self.voicectrl[1],    // Good for Monty on the Run, Commando
+        105 => 65, // self.voicectrl[2],
+        107 => 6, // self.instrnr[0],
+        127 => 0,
+        _ => note,
+      };
+      println!("INFO{}: octave {} too high (note {}), avoiding overflow: {}->{}", track_idx, note/12, note, note, rnote);
+      return rnote;
     }
-    // See NOTE_FREQ_HEX modification to accept overflow
-    return rnote;
+    return note;
   }
 
   fn get_new_note(&mut self, track_idx: usize) {
@@ -354,7 +365,6 @@ impl<'a> RhPlayer<'a> {
     if instr.vibrato_depth == 0 {
       return;
     }
-
     if let 15 = self.songs.version {
       let temp_freq_diff = self.vibrato_spellbound(instr, track_idx);
       self.sid.set_freq(track_idx, temp_freq_diff);
@@ -384,6 +394,7 @@ impl<'a> RhPlayer<'a> {
           tmpvfrq += freq_diff;
         }
       }
+      // println!("vibrato{}:{}",track_idx,tmpvfrq);
       self.sid.set_freq(track_idx, tmpvfrq);
     }
 
@@ -427,6 +438,7 @@ impl<'a> RhPlayer<'a> {
           new_pulse
         };
         self.instr_pw[instr_idx] = new_pulse;  // HACK
+        // println!("pw{}:{}", track_idx, new_pulse);
         self.sid.set_pw(track_idx, new_pulse);
       }
     } else {
@@ -461,7 +473,6 @@ impl<'a> RhPlayer<'a> {
     let instr = &self.songs.instruments[self.instrnr[track_idx] as usize];
     // check if drums needed this instr
     // don't bother if freq can't go any lower or if the note has finished
-
     //************ bit0:FX
     if instr.fx&1 != 0 && self.savefreq[track_idx]>>8 != 0 && self.lengthleft[track_idx] != 0 {
       let mut vctrl = self.voicectrl[track_idx] & 0xfe;
@@ -490,8 +501,6 @@ impl<'a> RhPlayer<'a> {
       self.counter&1 != 0
     };
     //************ bit1:Skydive - a long portamento-down from the note to zerofreq
-    // check if skydive needed this instr every 2nd vbl && check if skydive already complete
-    // println!("skydive: {}, {}, {}",instr.fx&2,ok_counter,self.savefreq[track_idx]);
     if instr.fx&2 != 0 && ok_counter && self.savefreq[track_idx]>>8!= 0 {
 
       match self.songs.version {
@@ -499,6 +508,7 @@ impl<'a> RhPlayer<'a> {
           if self.savelnthcc[track_idx]&0x1f > self.songs.skydive_v1_when {
             if (self.savefreq[track_idx] as isize + self.songs.skydive_v1_add as isize) < 0x10000 {
               if (self.savefreq[track_idx] as isize + self.songs.skydive_v1_add as isize) > 0 {
+                // println!("savefreq={}, skydive_v1={}", self.savefreq[track_idx], self.songs.skydive_v1_add);
                 self.savefreq[track_idx] = (self.savefreq[track_idx] as isize + self.songs.skydive_v1_add as isize) as u16;
               }
             }
@@ -604,32 +614,20 @@ impl<'a> RhPlayer<'a> {
     }
 
     for track_idx in 0..3 {
-      // check whether a new note is needed 
       if self.speed == self.resetspd {
         if self.lengthleft[track_idx] == 0 {
-          // print!("{}: ", track_idx);
           self.get_new_note(track_idx);
-          // println!();
+          // println!("note{}:{}",track_idx,self.notenum[track_idx]);
+          continue;
         } else {
           self.lengthleft[track_idx] -= 1;
           if self.engine_song_playing {
-            if self.notenum[track_idx] == 0 { 
-              continue;
-            }
             self.release(track_idx);
-            self.vibrato(track_idx);
-            self.pulse_width_timbre(track_idx);
-            self.portamento(track_idx);
-            self.drums(track_idx);
-            self.skydive(track_idx);
-            self.octave_arpeggio(track_idx);
           }
         }
-      } else {
-        if self.engine_song_playing {
-          if self.notenum[track_idx] == 0 { 
-            continue;
-          }
+      }
+      if self.engine_song_playing {
+        if self.notenum[track_idx] != 0 { 
           self.vibrato(track_idx);
           self.pulse_width_timbre(track_idx);
           self.portamento(track_idx);
