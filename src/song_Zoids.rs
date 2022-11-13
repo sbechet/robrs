@@ -3,7 +3,7 @@
 use super::rhsongs::{ RhSongs, Instrument, SidT, SoundFx, InstrFx };
 #[allow(dead_code)]
                 pub static RHSONGS: RhSongs = RhSongs {
-                    version: 20,
+                    version: 10,
                     total: 3,
                     tracks: &TRACKS,
                     patterns: &PATTERNS,

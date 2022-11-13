@@ -533,7 +533,7 @@ static DATABASE: [OriginalSong; 13] = [
         name: "Zoids",
         author: "Rob Hubbard",
         copyright: "1986 Martech",
-        compression_version: 20,
+        compression_version: 10,
         load_adress: 0x1000,
         song_track_qty: 3,
         song_list_offset: 0x14FC,
