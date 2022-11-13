@@ -309,7 +309,7 @@ impl<'a> RhPlayer<'a> {
   }
 
 
-  fn vibrato_spellbound_internal(&mut self, track_idx:usize) {
+  fn vibrato_spellbound_osc2(&mut self, track_idx:usize) {
     self.vibosc[track_idx]+=1;
     if self.vibdepth[track_idx] < self.vibosc[track_idx] {
 
@@ -320,43 +320,53 @@ impl<'a> RhPlayer<'a> {
     }
   }
 
-
-  fn vibrato_spellbound(&mut self, instr:&Instrument, track_idx:usize) -> u16 {
-    self.vibdepth[track_idx] = (instr.vibrato_depth as i8 & 0b0_1111_000) >> 3;
-    let vibrdepth = instr.vibrato_depth & 0b0_1111_111;
-
-    if self.vibincdec[track_idx] >= 0 {
-      self.vibrato_spellbound_internal(track_idx);
+  // oscillator: 0..vibdepth..0 ...
+  fn vibrato_update_osc(&mut self, track_idx:usize) -> i8 {
+    if self.vibincdec[track_idx] == 0 {
+      self.vibrato_spellbound_osc2(track_idx);
     } else {
       self.vibosc[track_idx]-=1;
       if self.vibosc[track_idx] == 0 {
         self.vibincdec[track_idx]+=1;
         if self.vibincdec[track_idx] < 0 {
-          self.vibrato_spellbound_internal(track_idx);
+          self.vibrato_spellbound_osc2(track_idx);
         }
       }
     }
-    // XXX in V2 code only if self.portaval[track_idx] == 0
+    // println!("osc{}:{}", track_idx, self.vibosc[track_idx]);
+    return self.vibosc[track_idx];
+  }
 
+
+  fn vibrato_spellbound(&mut self, instr:&Instrument, track_idx:usize) -> u16 {
+    self.vibdepth[track_idx] = (instr.vibrato_depth as i8 & 0b0_1111_000) >> 3;
+    let vibrdepth = instr.vibrato_depth & 0b0000_111;
+
+    let osc = self.vibrato_update_osc(track_idx);
+
+    // XXX in V2 code only if self.portaval[track_idx] == 0
     let note = self.assert_high_note(track_idx, self.notenum[track_idx]);
     let freq0 = NOTE_FREQ_HEX[note as usize - 1];
     let freq1 = NOTE_FREQ_HEX[note as usize];
+
     let mut temp_vdif_freq_diff = freq1 - freq0;
     let mut temp_freq_diff = freq1;
+
     // freq_diff / 2u16.pow(instr.vibrato_depth as u32);
     for _ in 0..vibrdepth {
       temp_vdif_freq_diff /= 2;
     }
 
-    for _ in 0..(self.vibdepth[track_idx]/2) {
+    for _ in 0..(self.vibdepth[track_idx]>>1) {
       temp_freq_diff -= temp_vdif_freq_diff;
     }
     if self.savelnthcc[track_idx] & 0b000_11111 != 0 {  // > 2 for v2 code
-      for _ in 0..self.vibosc[track_idx] {
+      for _ in 0..osc {
         temp_freq_diff += temp_vdif_freq_diff;
       }
     }
     // XXX in V2 code: self.savefreq[track_idx] = temp_freq_diff;
+    // println!("uknow{}: freq1={:5}, delta={:3}, osc={}, vibdepth={:08b} ({}), res={} -> {}", track_idx, freq1, freq1-freq0, osc, self.vibdepth[track_idx], self.vibdepth[track_idx], temp_freq_diff, temp_freq_diff as i32 - freq1 as i32);
     return temp_freq_diff;
   }
 
@@ -365,40 +375,41 @@ impl<'a> RhPlayer<'a> {
     if instr.vibrato_depth == 0 {
       return;
     }
-    if let 15 = self.songs.version {
-      let temp_freq_diff = self.vibrato_spellbound(instr, track_idx);
-      self.sid.set_freq(track_idx, temp_freq_diff);
-
-    } else {
-      // See Monty on the Run code
-      // the counter's turned into an oscillating value (01233210)
-      let osc = self.counter as i8 &7;
-      let oscilatval = if osc > 3 {
-        osc ^ 7
-      } else {
-        osc
-      };
-      let note = self.assert_high_note(track_idx, self.notenum[track_idx]);
-      let freq0 = NOTE_FREQ_HEX[note as usize];
-      let freq1 = NOTE_FREQ_HEX[note as usize + 1]; // See array hack to remove overflow
-      let mut freq_diff = freq1 - freq0;
-      // freq_diff / 2u16.pow(instr.vibrato_depth as u32);
-      for _ in 0..instr.vibrato_depth {
-        freq_diff /= 2;
-      }
-  
-      let mut tmpvfrq = freq0;
-      if self.savelnthcc[track_idx] & 0x1f > 7 {
-        // vibrato if note length >= 8
-        for _ in 0..oscilatval {
-          tmpvfrq += freq_diff;
+    let freq = match self.songs.version {
+      10 => {
+        // the counter's turned into an oscillating value (01233210)
+        let osc = self.counter as i8 &7;
+        let oscilatval = if osc > 3 {
+          osc ^ 7
+        } else {
+          osc
+        };
+        let note = self.assert_high_note(track_idx, self.notenum[track_idx]);
+        let freq0 = NOTE_FREQ_HEX[note as usize];
+        let freq1 = NOTE_FREQ_HEX[note as usize + 1]; // See array hack to remove overflow
+        let mut freq_diff = freq1 - freq0;
+        // freq_diff / 2u16.pow(instr.vibrato_depth as u32);
+        for _ in 0..instr.vibrato_depth {
+          freq_diff /= 2;
         }
+    
+        let mut tmpvfrq = freq0;
+        if self.savelnthcc[track_idx] & 0x1f > 7 {
+          // vibrato if note length >= 8
+          for _ in 0..oscilatval {
+            tmpvfrq += freq_diff;
+          }
+        }
+        // println!("vibrato_v10{}:{}",track_idx,tmpvfrq);
+        tmpvfrq
+      },
+      _ => {
+        let temp_freq_diff = self.vibrato_spellbound(instr, track_idx);
+        // println!("vibrato_def{}:{}",track_idx, temp_freq_diff);
+        temp_freq_diff
       }
-      // println!("vibrato{}:{}",track_idx,tmpvfrq);
-      self.sid.set_freq(track_idx, tmpvfrq);
-    }
-
-    return;
+    };
+    self.sid.set_freq(track_idx, freq);
   }
 
   fn pulse_width_timbre(&mut self, track_idx: usize) {
@@ -438,7 +449,7 @@ impl<'a> RhPlayer<'a> {
           new_pulse
         };
         self.instr_pw[instr_idx] = new_pulse;  // HACK
-        // println!("pw{}:{}", track_idx, new_pulse);
+        // println!("pw{}:{} / {}", track_idx, new_pulse, self.pulsedir[track_idx]);
         self.sid.set_pw(track_idx, new_pulse);
       }
     } else {
@@ -446,12 +457,13 @@ impl<'a> RhPlayer<'a> {
       // println!("instr.fx commando code, overflow:{}", freq_overflow);
       let new_pulse = instr.pulse_width + pulsevalue as u16;
       self.instr_pw[instr_idx] = new_pulse;
+      println!("pw_else{}:{}", track_idx, new_pulse);
       self.sid.set_pw(track_idx, new_pulse);
     }
   }
 
   // portemento routine
-  // TODO: v2 code: see noterh.rh
+  // TODO: v2 code: see noterh.rs
     fn portamento(&mut self, track_idx: usize) {
     if self.portaval[track_idx] == 0 {
       return;
@@ -471,8 +483,6 @@ impl<'a> RhPlayer<'a> {
   // drums
   fn drums(&mut self, track_idx: usize) {
     let instr = &self.songs.instruments[self.instrnr[track_idx] as usize];
-    // check if drums needed this instr
-    // don't bother if freq can't go any lower or if the note has finished
     //************ bit0:FX
     if instr.fx&1 != 0 && self.savefreq[track_idx]>>8 != 0 && self.lengthleft[track_idx] != 0 {
       let mut vctrl = self.voicectrl[track_idx] & 0xfe;
@@ -488,6 +498,7 @@ impl<'a> RhPlayer<'a> {
           vctrl = 0x80;
         }
       }
+      println!("drums{}:{} / {}",track_idx,self.savefreq[track_idx],vctrl);
       self.sid.set_freq(track_idx, self.savefreq[track_idx]);
       self.sid.set_ctrl(track_idx, vctrl);
     }
@@ -501,10 +512,9 @@ impl<'a> RhPlayer<'a> {
       self.counter&1 != 0
     };
     //************ bit1:Skydive - a long portamento-down from the note to zerofreq
-    if instr.fx&2 != 0 && ok_counter && self.savefreq[track_idx]>>8!= 0 {
-
-      match self.songs.version {
-        10 | 15 => {
+    if instr.fx&2 != 0 && ok_counter && self.savefreq[track_idx]>>8!=0 {
+      let freq = match self.songs.version {
+        10 => {
           if self.savelnthcc[track_idx]&0x1f > self.songs.skydive_v1_when {
             if (self.savefreq[track_idx] as isize + self.songs.skydive_v1_add as isize) < 0x10000 {
               if (self.savefreq[track_idx] as isize + self.songs.skydive_v1_add as isize) > 0 {
@@ -513,30 +523,36 @@ impl<'a> RhPlayer<'a> {
               }
             }
           }
+          self.savefreq[track_idx]
+        },
+        15 => {
+          self.notenum[track_idx] += 1;
+          let note = self.notenum[track_idx];
+          NOTE_FREQ_HEX[note as usize]
         },
         _ => {
           // TODO
+          self.savefreq[track_idx]
         }
-      }
-      self.sid.set_freq(track_idx, self.savefreq[track_idx]);
+      };
+      println!("skydive{}:{}",track_idx, freq);
+      self.sid.set_freq(track_idx, freq);
     }
   }
 
   fn octave_arpeggio(&mut self, track_idx: usize) {
     let instr = &self.songs.instruments[self.instrnr[track_idx] as usize];
-    //************ bit2:instrfx is an octave arpeggio pretty tame huh?
+    //************ bit2:instrfx
     // check if arpt needed
     if instr.fx&4 != 0 {
       let mut note = if let 15 = self.songs.version {
-        let mask = if (instr.fx>>4)!=12 { 1 } else { 2 };
-        // only 2 arpt values
+        let mask = if (instr.fx>>4)==12 { 2 } else { 1 };   // instr.fx : 0bAAAACCCC : C for option, A value for &8 effect
         if self.counter&mask == 0 {
           self.notenum[track_idx] - (instr.fx>>4)
         } else {
           self.notenum[track_idx]
         }
       } else {
-        // only 2 arpt values
         if self.counter&1 == 0 {
           // even, note
           self.notenum[track_idx]
@@ -545,9 +561,9 @@ impl<'a> RhPlayer<'a> {
           self.notenum[track_idx] + 12
         }
       };
-
       // dump the corresponding frequencies
       note = self.assert_high_note(track_idx, note);
+      println!("octarp{}:{}", track_idx, NOTE_FREQ_HEX[note as usize]);
       self.sid.set_freq(track_idx, NOTE_FREQ_HEX[note as usize]);
     }
   }
