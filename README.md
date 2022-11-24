@@ -15,7 +15,7 @@ Help Welcome: copy and add `OriginalSong` in `DATABASE` array (see `bin/database
 - [x] 6 - The Last V8 (1985 MAD/Mastertronic)
 - [x] 7 - Spellbound (1986 MAD/Mastertronic) (W.I.P)
 - [ ] 8 - Thrust (1986 Firebird)
-- [ ] 9 - International Karate (1986 System 3)
+- [x] 9 - International Karate (1986 System 3)
 - [ ] 10 - One Man & His Droid
 - [x] 11 - Thing on a Spring (1985 Gremlin Graphics)
 - [ ] 12 - Warhawk or Proteus (1986)
