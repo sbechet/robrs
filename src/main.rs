@@ -54,6 +54,7 @@ fn sidplay(rhsongs: Option<&RhSongs>, number: usize) {
     println!("Rust Rewrite Rob Hubbard Player playing just for u...");
 
     let mut sid: Box<Sid> = Box::new(Sid::new(ChipModel::Mos6581));
+    // let mut sid: Box<Sid> = Box::new(Sid::new(ChipModel::Mos8580));
 
     // sid.set_sampling_parameters(SamplingMethod::Fast,1022727, 44100);   // NTSC Commando?
     // sid.set_sampling_parameters(SamplingMethod::Interpolate, 985_248, 44100);    // TODO:not working?
@@ -68,7 +69,7 @@ fn sidplay(rhsongs: Option<&RhSongs>, number: usize) {
        2 : next song
        3<=x<=19 : SoundFX
     */
-    // TODO:not working for monty on the run: 13, 14, 16,
+    // TODO:not working for monty on the run: 13
     // TODO: not working for commando: 7, 12, 16
     player.init(number);
 
@@ -92,8 +93,8 @@ fn sidplay(rhsongs: Option<&RhSongs>, number: usize) {
     pcm.sw_params(&swp).unwrap();
 
     let mut buffer = vec![0i16; 8192];
-    let mut freq = 50; // Hz
-    let wait_time = time::Duration::from_millis(freq);
+    let freq = 50; // Hz
+    let wait_time = time::Duration::from_millis(1000/freq - 1);
     loop {
         player.play();
 
@@ -102,12 +103,12 @@ fn sidplay(rhsongs: Option<&RhSongs>, number: usize) {
         // alsa play
         let mut delta:u32 = 44100 / 2; // TODO:why?
         while delta > 0 {
-            // println!("debuging resid-rs: {:?}", player.get_sids_regs());
+            // println!("debuging resid-rs: {:?}", player.get_sid_regs());
             let (samples, next_delta) = player.sample(delta, &mut buffer[..], 1);
             io.writei(&buffer[0..samples]).unwrap();
             delta = next_delta;
         }
-        // thread::sleep(wait_time);
+        thread::sleep(wait_time);
 
     }
     // Wait for the stream to finish playback.
