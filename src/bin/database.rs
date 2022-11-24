@@ -251,7 +251,7 @@ impl<'a> OriginalSong<'a> {
 
 }
 
-static DATABASE: [OriginalSong; 13] = [
+static DATABASE: [OriginalSong; 14] = [
     OriginalSong {
         filename: "ACE_II.sid",
         name: "ACE II",
@@ -366,6 +366,29 @@ static DATABASE: [OriginalSong; 13] = [
         resetspd: 3,
         skydive_v1_when: 0,
         skydive_v1_add: -256,
+    },
+    OriginalSong {
+        filename: "International_Karate.sid",
+        name: "International Karate",
+        author: "Rob Hubbard",
+        copyright: "1986 System 3",
+        compression_version: 19, // Really near 20 but bit7 on notnum and no separation beetween sid and cpu code
+        load_adress: 0xAE00,
+        song_track_qty: 3,
+        song_list_offset: 0xB3B0,
+        song_list_qty: 1,
+        patt_ptl_offset: 0xB3B6,
+        patt_pth_offset: 0xB3EB,
+        patt_qty: 53,
+        instr_offset: 0xB308,
+        instr_qty: 20,
+        fx_v1_offset: 0,
+        fx_v1_qty: 0,
+        fx_v2_offset: 0,
+        fx_v2_qty: 0,
+        resetspd: 2,
+        skydive_v1_when: 0,
+        skydive_v1_add: 0,
     },
     OriginalSong {
         filename: "Last_V8.sid",
