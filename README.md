@@ -43,5 +43,8 @@ Help Welcome: copy and add `OriginalSong` in `DATABASE` array (see `bin/database
 - [ ] Convert to midi files (W.I.P)
 - [ ] Full rewrite using rust idomatics
 - [ ] Find a simple solution to create sid files using this rewrite? (someone ready for a LLVM 6510 target? :p)?
+    - [ ] see [http://forum.6502.org/viewtopic.php?p=84048#p84048](6502 forum)
+    - [ ] see [https://github.com/llvm-mos/llvm-mos/](llvm-mos)
+    - [ ] see [https://github.com/rust-lang/rust/compare/master...mrk-its:rust-mos:mos_target](target add)
 - [ ] Write a simple SoundTracker using `embedded-graphics`?
 - [ ] Change ALSA output to be Windows and Mac compatible (maybe a day...)

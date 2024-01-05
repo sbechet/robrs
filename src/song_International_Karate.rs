@@ -1,10 +1,9 @@
 // International Karate - Rob Hubbard - 1986 System 3
 
 use super::rhsongs::{InstrFx, Instrument, RhSongs, SidT, SoundFx};
-
 #[allow(dead_code)]
 pub static RHSONGS: RhSongs = RhSongs {
-    version: 19,
+    version: 20,
     total: 1,
     tracks: &TRACKS,
     patterns: &PATTERNS,
@@ -405,7 +404,7 @@ pub static INSTRUMENTS: [Instrument; 20] = [
         attack_and_decay: 0x0A,
         sustain_and_release: 0x0A,
         vibrato_depth: 0,
-        pulse_speed: 32,
+        pulse_speed: 0x20,
         fx: 0b01010101,
     },
     Instrument {
@@ -414,7 +413,7 @@ pub static INSTRUMENTS: [Instrument; 20] = [
         attack_and_decay: 0x09,
         sustain_and_release: 0x0A,
         vibrato_depth: 0,
-        pulse_speed: 0,
+        pulse_speed: 0x00,
         fx: 0b01010101,
     },
     Instrument {
@@ -423,7 +422,7 @@ pub static INSTRUMENTS: [Instrument; 20] = [
         attack_and_decay: 0x0B,
         sustain_and_release: 0xB0,
         vibrato_depth: 29,
-        pulse_speed: 32,
+        pulse_speed: 0x20,
         fx: 0b00001000,
     },
     Instrument {
@@ -432,7 +431,7 @@ pub static INSTRUMENTS: [Instrument; 20] = [
         attack_and_decay: 0x0F,
         sustain_and_release: 0x0B,
         vibrato_depth: 0,
-        pulse_speed: 0,
+        pulse_speed: 0x00,
         fx: 0b11000101,
     },
     Instrument {
@@ -441,7 +440,7 @@ pub static INSTRUMENTS: [Instrument; 20] = [
         attack_and_decay: 0x0A,
         sustain_and_release: 0x08,
         vibrato_depth: 0,
-        pulse_speed: 0,
+        pulse_speed: 0x00,
         fx: 0b11000101,
     },
     Instrument {
@@ -450,7 +449,7 @@ pub static INSTRUMENTS: [Instrument; 20] = [
         attack_and_decay: 0x0F,
         sustain_and_release: 0xAD,
         vibrato_depth: 16,
-        pulse_speed: 0,
+        pulse_speed: 0x00,
         fx: 0b00000000,
     },
     Instrument {
@@ -459,7 +458,7 @@ pub static INSTRUMENTS: [Instrument; 20] = [
         attack_and_decay: 0x6D,
         sustain_and_release: 0x9F,
         vibrato_depth: 43,
-        pulse_speed: 20,
+        pulse_speed: 0x14,
         fx: 0b00000000,
     },
     Instrument {
@@ -468,7 +467,7 @@ pub static INSTRUMENTS: [Instrument; 20] = [
         attack_and_decay: 0x58,
         sustain_and_release: 0x00,
         vibrato_depth: 0,
-        pulse_speed: 32,
+        pulse_speed: 0x20,
         fx: 0b01010100,
     },
     Instrument {
@@ -477,7 +476,7 @@ pub static INSTRUMENTS: [Instrument; 20] = [
         attack_and_decay: 0x1D,
         sustain_and_release: 0x9F,
         vibrato_depth: 43,
-        pulse_speed: 80,
+        pulse_speed: 0x50,
         fx: 0b00000000,
     },
     Instrument {
@@ -486,7 +485,7 @@ pub static INSTRUMENTS: [Instrument; 20] = [
         attack_and_decay: 0x09,
         sustain_and_release: 0x0A,
         vibrato_depth: 0,
-        pulse_speed: 48,
+        pulse_speed: 0x30,
         fx: 0b01110101,
     },
     Instrument {
@@ -495,7 +494,7 @@ pub static INSTRUMENTS: [Instrument; 20] = [
         attack_and_decay: 0x0F,
         sustain_and_release: 0xAD,
         vibrato_depth: 0,
-        pulse_speed: 0,
+        pulse_speed: 0x00,
         fx: 0b11110101,
     },
     Instrument {
@@ -504,7 +503,7 @@ pub static INSTRUMENTS: [Instrument; 20] = [
         attack_and_decay: 0x09,
         sustain_and_release: 0xAA,
         vibrato_depth: 0,
-        pulse_speed: 0,
+        pulse_speed: 0x00,
         fx: 0b01010101,
     },
     Instrument {
@@ -513,7 +512,7 @@ pub static INSTRUMENTS: [Instrument; 20] = [
         attack_and_decay: 0x0F,
         sustain_and_release: 0x0B,
         vibrato_depth: 0,
-        pulse_speed: 0,
+        pulse_speed: 0x00,
         fx: 0b00000001,
     },
     Instrument {
@@ -522,7 +521,7 @@ pub static INSTRUMENTS: [Instrument; 20] = [
         attack_and_decay: 0x09,
         sustain_and_release: 0x08,
         vibrato_depth: 0,
-        pulse_speed: 144,
+        pulse_speed: 0x90,
         fx: 0b01010101,
     },
     Instrument {
@@ -531,7 +530,7 @@ pub static INSTRUMENTS: [Instrument; 20] = [
         attack_and_decay: 0x09,
         sustain_and_release: 0x08,
         vibrato_depth: 0,
-        pulse_speed: 64,
+        pulse_speed: 0x40,
         fx: 0b01010100,
     },
     Instrument {
@@ -540,7 +539,7 @@ pub static INSTRUMENTS: [Instrument; 20] = [
         attack_and_decay: 0x0F,
         sustain_and_release: 0xFF,
         vibrato_depth: 0,
-        pulse_speed: 0,
+        pulse_speed: 0x00,
         fx: 0b00000101,
     },
     Instrument {
@@ -549,7 +548,7 @@ pub static INSTRUMENTS: [Instrument; 20] = [
         attack_and_decay: 0x09,
         sustain_and_release: 0x0B,
         vibrato_depth: 0,
-        pulse_speed: 0,
+        pulse_speed: 0x00,
         fx: 0b00000101,
     },
     Instrument {
@@ -558,7 +557,7 @@ pub static INSTRUMENTS: [Instrument; 20] = [
         attack_and_decay: 0x1A,
         sustain_and_release: 0x9F,
         vibrato_depth: 17,
-        pulse_speed: 128,
+        pulse_speed: 0x80,
         fx: 0b00000000,
     },
     Instrument {
@@ -567,7 +566,7 @@ pub static INSTRUMENTS: [Instrument; 20] = [
         attack_and_decay: 0x1C,
         sustain_and_release: 0xDF,
         vibrato_depth: 43,
-        pulse_speed: 33,
+        pulse_speed: 0x21,
         fx: 0b00000000,
     },
     Instrument {
@@ -576,7 +575,7 @@ pub static INSTRUMENTS: [Instrument; 20] = [
         attack_and_decay: 0x1C,
         sustain_and_release: 0xDF,
         vibrato_depth: 51,
-        pulse_speed: 32,
+        pulse_speed: 0x20,
         fx: 0b00000000,
     },
 ];

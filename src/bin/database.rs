@@ -4,33 +4,32 @@ use std::collections::HashMap;
 // use std::io::prelude::*;
 use std::path::Path;
 
-
-struct OriginalSong<'a> {
-    filename: &'a str,
-    name: &'a str,
-    author: &'a str,
-    copyright: &'a str,
-    compression_version: usize,
-    load_adress: usize,
-    song_track_qty: usize,
-    song_list_offset: usize,
-    song_list_qty: usize,
-    patt_ptl_offset: usize,
-    patt_pth_offset: usize,
-    patt_qty: usize,
-    instr_offset: usize,
-    instr_qty: usize,
-    fx_v1_offset: usize,
-    fx_v1_qty: usize,
-    fx_v2_offset: usize,
-    fx_v2_qty: usize,
-    resetspd: usize,
-    skydive_v1_when: usize, // When length > skydive_v1_when
-    skydive_v1_add: isize,  // XXX if freq+skydive_v1_add<0x10000
+pub struct OriginalSong<'a> {
+    pub filename: &'a str,
+    pub name: &'a str,
+    pub author: &'a str,
+    pub copyright: &'a str,
+    pub compression_version: usize,
+    pub load_adress: usize,
+    pub song_track_qty: usize,
+    pub song_list_offset: usize,
+    pub song_list_qty: usize,
+    pub patt_ptl_offset: usize,
+    pub patt_pth_offset: usize,
+    pub patt_qty: usize,
+    pub instr_offset: usize,
+    pub instr_qty: usize,
+    pub fx_v1_offset: usize,
+    pub fx_v1_qty: usize,
+    pub fx_v2_offset: usize,
+    pub fx_v2_qty: usize,
+    pub resetspd: usize,
+    pub skydive_v1_when: usize, // When length > skydive_v1_when
+    pub skydive_v1_add: isize,  // XXX if freq+skydive_v1_add<0x10000
 }
 
 impl<'a> OriginalSong<'a> {
-    fn get_list() -> Vec<&'a str> {
+    pub fn get_list() -> Vec<&'a str> {
         let mut list: Vec<&'a str> = vec![];
         for i in 0..DATABASE.len() {
             list.push(DATABASE[i].name);
@@ -38,7 +37,7 @@ impl<'a> OriginalSong<'a> {
         return list;
     }
 
-    fn get_song(name: &str) -> Option<&OriginalSong> {
+    pub fn get_song(name: &str) -> Option<&OriginalSong> {
         for i in 0..DATABASE.len() {
             if DATABASE[i].name == name {
                 return Some(&DATABASE[i]);
@@ -57,10 +56,11 @@ impl<'a> OriginalSong<'a> {
         };
 
         let mut songs: Vec<usize> = vec![];
-    
-        println!("// {} - {} - {}\n",self.name, self.author, self.copyright);
+
+        println!("// {} - {} - {}\n", self.name, self.author, self.copyright);
         println!("use super::rhsongs::{{ RhSongs, Instrument, SidT, SoundFx, InstrFx }};");
-        println!(r###"#[allow(dead_code)]
+        println!(
+            r###"#[allow(dead_code)]
                 pub static RHSONGS: RhSongs = RhSongs {{
                     version: {},
                     total: {},
@@ -72,22 +72,27 @@ impl<'a> OriginalSong<'a> {
                     resetspd: {},
                     skydive_v1_when: {},
                     skydive_v1_add: {},
-                }};"###, 
-                self.compression_version, 
-                self.song_list_qty+self.fx_v1_qty, 
-                self.resetspd, 
-                self.skydive_v1_when, 
-                self.skydive_v1_add);
+                }};"###,
+            self.compression_version,
+            self.song_list_qty + self.fx_v1_qty,
+            self.resetspd,
+            self.skydive_v1_when,
+            self.skydive_v1_add
+        );
 
         // ********* PREPARE SONGS
         for i in 0..self.song_list_qty {
-            let offset = 126 + self.song_list_offset - self.load_adress + i*2*self.song_track_qty;
+            let offset =
+                126 + self.song_list_offset - self.load_adress + i * 2 * self.song_track_qty;
             for j in 0..self.song_track_qty {
-                songs.push(sidfile[offset+j] as usize | (sidfile[offset+j+self.song_track_qty] as usize) << 8);
+                songs.push(
+                    sidfile[offset + j] as usize
+                        | (sidfile[offset + j + self.song_track_qty] as usize) << 8,
+                );
             }
         }
         // println!("XXX songs={:?}", songs);
-    
+
         // ********* TRACKS
         let mut tracks: HashMap<usize, usize> = HashMap::new();
         for (i, offset) in songs.iter().enumerate() {
@@ -96,14 +101,14 @@ impl<'a> OriginalSong<'a> {
             let mut j = 0;
             tracks.insert(file_offset, i);
             loop {
-                track.push(sidfile[file_offset+j]);
-                if sidfile[file_offset+j] == 0xfe || sidfile[file_offset+j] == 0xff {
+                track.push(sidfile[file_offset + j]);
+                if sidfile[file_offset + j] == 0xfe || sidfile[file_offset + j] == 0xff {
                     break;
                 }
                 j += 1;
             }
             println!("\n\n#[allow(dead_code)]");
-            println!("pub static TRACK_{}: [u8; {}] = {:?};",i,j+1, track);
+            println!("pub static TRACK_{}: [u8; {}] = {:?};", i, j + 1, track);
         }
         // println!("tracks={:?}", tracks);
 
@@ -111,35 +116,44 @@ impl<'a> OriginalSong<'a> {
             println!("\n\n#[allow(dead_code)]");
             println!("pub static TRACK_EMPTY: [u8; 1] = [255];");
         }
-    
+
         // ********* PRINT TRACKS
         println!("\n\n#[allow(dead_code)]");
-        println!("pub static TRACKS: [ &[&[u8];3]; {}] = [", self.song_list_qty);
+        println!(
+            "pub static TRACKS: [ &[&[u8];3]; {}] = [",
+            self.song_list_qty
+        );
         for i in 0..self.song_list_qty {
             // TODO: One day cleanup?
             match self.song_track_qty {
                 2 => {
-                    let voice0 = songs[i*self.song_track_qty]+126-self.load_adress;
-                    let voice1 = songs[i*self.song_track_qty+1]+126-self.load_adress;
-                    println!("    &[&TRACK_{},&TRACK_{},&TRACK_EMPTY],", tracks[&voice0], tracks[&voice1]);
-                },
+                    let voice0 = songs[i * self.song_track_qty] + 126 - self.load_adress;
+                    let voice1 = songs[i * self.song_track_qty + 1] + 126 - self.load_adress;
+                    println!(
+                        "    &[&TRACK_{},&TRACK_{},&TRACK_EMPTY],",
+                        tracks[&voice0], tracks[&voice1]
+                    );
+                }
                 _ => {
-                    let voice0 = songs[i*self.song_track_qty]+126-self.load_adress;
-                    let voice1 = songs[i*self.song_track_qty+1]+126-self.load_adress;
-                    let voice2 = songs[i*self.song_track_qty+2]+126-self.load_adress;
-                    println!("    &[&TRACK_{},&TRACK_{},&TRACK_{}],", tracks[&voice0], tracks[&voice1], tracks[&voice2]);
-                },
+                    let voice0 = songs[i * self.song_track_qty] + 126 - self.load_adress;
+                    let voice1 = songs[i * self.song_track_qty + 1] + 126 - self.load_adress;
+                    let voice2 = songs[i * self.song_track_qty + 2] + 126 - self.load_adress;
+                    println!(
+                        "    &[&TRACK_{},&TRACK_{},&TRACK_{}],",
+                        tracks[&voice0], tracks[&voice1], tracks[&voice2]
+                    );
+                }
             }
         }
         println!("];");
-    
-    
+
         // ********* PATTERNS
         let mut patterns: Vec<u16> = vec![];
         for i in 0..self.patt_qty {
-            let offset_low_file = 126+self.patt_ptl_offset-self.load_adress;
-            let offset_high_file = 126+self.patt_pth_offset-self.load_adress;
-            let offset: u16 = sidfile[offset_low_file+i] as u16 | (sidfile[offset_high_file+i] as u16) << 8;
+            let offset_low_file = 126 + self.patt_ptl_offset - self.load_adress;
+            let offset_high_file = 126 + self.patt_pth_offset - self.load_adress;
+            let offset: u16 =
+                sidfile[offset_low_file + i] as u16 | (sidfile[offset_high_file + i] as u16) << 8;
             patterns.push(offset);
         }
         // println!("{:04X?}",patterns);
@@ -149,56 +163,65 @@ impl<'a> OriginalSong<'a> {
             print!("&PATTERN_{},", i);
         }
         println!("];");
-    
+
+        // println!("pub static DEBUG_PATTERNS_OFFSET: [usize; {}] = {:#X?};", patterns.len(), patterns);
         for i in 0..self.patt_qty {
             let file_offset = 126 + patterns[i] as usize - self.load_adress;
             let mut pattern: Vec<u8> = vec![];
             let mut j = 0;
             loop {
-                pattern.push(sidfile[file_offset+j]);
-                if sidfile[file_offset+j] == 0xff {
-                    break;
+                pattern.push(sidfile[file_offset + j]);
+                if sidfile[file_offset + j] == 0xff {
+                    break; // TODO: Sometimes test bug, see international karate
                 }
                 j += 1;
             }
             println!("#[allow(dead_code)]");
-            println!("pub static PATTERN_{}: [u8; {}] = {:#X?};",i,pattern.len(), pattern);
+            println!(
+                "pub static PATTERN_{}: [u8; {}] = {:#X?};",
+                i,
+                pattern.len(),
+                pattern
+            );
         }
-    
+
         // ********* INSTRUMENTS
         println!("\n\n#[allow(dead_code)]");
-        println!("pub static INSTRUMENTS: [ Instrument; {}] = [", self.instr_qty);
+        println!(
+            "pub static INSTRUMENTS: [ Instrument; {}] = [",
+            self.instr_qty
+        );
         for i in 0..self.instr_qty {
             let file_offset = 126 + self.instr_offset - self.load_adress;
-            let start = file_offset+i*8;
-            println!("    Instrument {{ pulse_width:{}, ctrl_register:0b{:08b}, attack_and_decay:0x{:02X}, sustain_and_release:0x{:02X}, vibrato_depth:{}, pulse_speed:{}, fx:0b{:08b} }},",
+            let start = file_offset + i * 8;
+            println!("    Instrument {{ pulse_width:{}, ctrl_register:0b{:08b}, attack_and_decay:0x{:02X}, sustain_and_release:0x{:02X}, vibrato_depth:{}, pulse_speed:0x{:02X}, fx:0b{:08b} }},",
                     sidfile[start] as u16|(sidfile[start+1] as u16)<<8,sidfile[start+2],sidfile[start+3],sidfile[start+4],sidfile[start+5],sidfile[start+6],sidfile[start+7]);
         }
         println!("];");
-    
+
         // ********* SOUNDFX
         println!("\n\n#[allow(dead_code)]");
         println!("pub static SOUNDFX: [ SoundFx; {}] = [", self.fx_v1_qty);
         for i in 0..self.fx_v1_qty {
             let file_offset = 126 + self.fx_v1_offset - self.load_adress;
-            let start = file_offset+i*16;
+            let start = file_offset + i * 16;
             println!("    SoundFx {{
                 incdec: 0b{:08b},
                 voice0: SidT {{
-                    freq: 0x{:04X},
+                    freq: 0x{:04X},     // REAL: lower part is used as start note. 
                     pulse_width: {},
-                    ctrl: {},
-                    attack_and_decay_len: {},
-                    sustain_vol_and_release_len: {},
+                    ctrl: 0b{:08b},
+                    attack_and_decay_len: 0x{:02X},
+                    sustain_vol_and_release_len: 0x{:02X},
                 }},
                 voice1: SidT {{
-                    freq: 0x{:04X},
+                    freq: 0x{:04X},     // REAL: value & 0b0011_1111 = note_delta ; sometime if value&0b1_0000000: flip_flop voice0 ctrl ; if value&0b0_1_000000: flip_flop voice1 ctrl
                     pulse_width: {},
-                    ctrl: {},
-                    attack_and_decay_len: {},
-                    sustain_vol_and_release_len: {},
+                    ctrl: 0b{:08b},
+                    attack_and_decay_len: 0x{:02X},
+                    sustain_vol_and_release_len: 0x{:02X},
                 }},
-                sfx_note_dest: 0x{:02X},
+                sfx_note_dest: 0x{:02X},    // REAL: end note
             }}, ",
             sidfile[start],
     
@@ -224,8 +247,9 @@ impl<'a> OriginalSong<'a> {
         println!("pub static INSTRFX: [ InstrFx; {}] = [", self.fx_v2_qty);
         for i in 0..self.fx_v2_qty {
             let file_offset = 126 + self.fx_v2_offset - self.load_adress;
-            let start = file_offset+i*8;
-            println!("    InstrFx {{
+            let start = file_offset + i * 8;
+            println!(
+                "    InstrFx {{
                 vibdepth_note: {},
                 arpt: 0b{:08b},
                 skydive: 0b{:08b},
@@ -235,23 +259,21 @@ impl<'a> OriginalSong<'a> {
                 resfilt: 0b{:08b},
                 fchi: 0b{:08b},
             }}, ",
-            sidfile[start],
-            sidfile[start+1],
-            sidfile[start+2],
-            sidfile[start+3],
-            sidfile[start+4],
-            sidfile[start+5],
-            sidfile[start+6],
-            sidfile[start+7],
+                sidfile[start],
+                sidfile[start + 1],
+                sidfile[start + 2],
+                sidfile[start + 3],
+                sidfile[start + 4],
+                sidfile[start + 5],
+                sidfile[start + 6],
+                sidfile[start + 7],
             );
         }
         println!("];");
     }
-    
-
 }
 
-static DATABASE: [OriginalSong; 14] = [
+pub static DATABASE: [OriginalSong; 14] = [
     OriginalSong {
         filename: "ACE_II.sid",
         name: "ACE II",
@@ -294,7 +316,7 @@ static DATABASE: [OriginalSong; 14] = [
         fx_v1_qty: 16,
         fx_v2_offset: 0,
         fx_v2_qty: 0,
-        resetspd: 2,
+        resetspd: 2, // [2, 3, 2]
         skydive_v1_when: 2,
         skydive_v1_add: 512,
     },
@@ -326,7 +348,7 @@ static DATABASE: [OriginalSong; 14] = [
         name: "Delta",
         author: "Rob Hubbard",
         copyright: "1987 Thalamus",
-        compression_version: 20,
+        compression_version: 30, // Compression _and_ pattern loop in tracks
         load_adress: 0xBC00,
         song_track_qty: 3,
         song_list_offset: 0xC4F4,
@@ -372,7 +394,7 @@ static DATABASE: [OriginalSong; 14] = [
         name: "International Karate",
         author: "Rob Hubbard",
         copyright: "1986 System 3",
-        compression_version: 19, // Really near 20 but bit7 on notnum and no separation beetween sid and cpu code
+        compression_version: 20,
         load_adress: 0xAE00,
         song_track_qty: 3,
         song_list_offset: 0xB3B0,
@@ -586,12 +608,13 @@ fn main() {
     let cli = Cli::parse();
 
     match OriginalSong::get_song(&*cli.name) {
-        Some(song) => song.extract(),
-        _ => for i in 0..list.len() {
-            println!("{}",list[i]);
-        },
+        Some(song) => {
+            song.extract();
+        }
+        _ => {
+            for i in 0..list.len() {
+                println!("{}", list[i]);
+            }
+        }
     }
-
 }
-
- 

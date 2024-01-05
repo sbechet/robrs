@@ -1,13 +1,12 @@
 use std::fmt;
 
 pub struct Note {
-    pub value: u8,
+    pub value: u8, // C-0 to B-8
     pub length: u16,
     pub instr: u8,
     pub portamento: i16,
     pub release: bool,
 }
-
 
 impl Note {
     pub fn new() -> Note {
@@ -32,6 +31,10 @@ impl Note {
 
 impl fmt::Debug for Note {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Note [{},{},{},{},{}]", self.value, self.length, self.instr, self.portamento, self.release)
+        write!(
+            f,
+            "Note [{},{},{},{},{}]",
+            self.value, self.length, self.instr, self.portamento, self.release
+        )
     }
 }

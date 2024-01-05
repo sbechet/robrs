@@ -5,9 +5,17 @@ license = "GPL-3.0"
 version = "0.1.0"
 edition = "2021"
 
+default-run = "robrs"
+
 
 [dependencies]
 alsa = "0.6.0"
 clap = { version="4.0.15", features = ["derive"] }
 resid-rs = "1.1.1"
 midly = "0.5.2"
+nom = "7"
+bitvec = "1"
+serde = { version = "1", features = ["derive"] }
+bincode = "1"
+xmrs = { path = "../xmrs" }
+ahash = "0.8.7"
