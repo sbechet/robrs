@@ -415,7 +415,11 @@ impl<'a> RhPlayer<'a> {
 
         // XXX in V2 code only if self.portaval[track_idx] == 0
         let note = self.assert_high_note(track_idx, self.notenum[track_idx]);
-        let freq0 = NOTE_FREQ_HEX[note as usize - 1];
+        let freq0 = if note != 0 {
+            NOTE_FREQ_HEX[note as usize - 1]
+        } else {
+            0x106
+        };
         let freq1 = NOTE_FREQ_HEX[note as usize];
 
         let mut temp_vdif_freq_diff = freq1 - freq0;
@@ -468,6 +472,9 @@ impl<'a> RhPlayer<'a> {
                     }
                 }
                 // println!("vibrato_v10{}:{}",track_idx,tmpvfrq);
+                // vd=0..15
+                // d=(F1-F0)/2^vd
+                // tmpvfrq = F0 + osc*d
                 tmpvfrq
             }
             _ => {
