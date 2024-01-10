@@ -1,2 +1,2 @@
 #!/bin/bash
-cargo run --bin robrs -- crazycomets 1
+cargo run --bin main -- crazycomets 1

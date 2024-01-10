@@ -47,7 +47,7 @@ impl<'a> OriginalSong<'a> {
     }
 
     fn extract(&self) {
-        let spath = format!("src/bin/{}", &self.filename);
+        let spath = format!("sid/{}", &self.filename);
         let path = Path::new(&spath);
         let display = path.display();
         let sidfile = match std::fs::read(path) {
@@ -58,14 +58,16 @@ impl<'a> OriginalSong<'a> {
         let mut songs: Vec<usize> = vec![];
 
         println!("// {} - {} - {}\n", self.name, self.author, self.copyright);
-        println!("use super::rhsongs::{{ RhSongs, Instrument, SidT, SoundFx, InstrFx }};");
+        println!(
+            "use crate::rhplayer::rhsongs::{{ RhSongs, Instrument, SidT, SoundFx, InstrFx }};"
+        );
         println!(
             r###"#[allow(dead_code)]
                 pub static RHSONGS: RhSongs = RhSongs {{
                     version: {},
                     total: {},
+                    channels: &CHANNELS,
                     tracks: &TRACKS,
-                    patterns: &PATTERNS,
                     instruments: &INSTRUMENTS,
                     soundfx: &SOUNDFX,
                     instrfx: &INSTRFX,
@@ -93,13 +95,13 @@ impl<'a> OriginalSong<'a> {
         }
         // println!("XXX songs={:?}", songs);
 
-        // ********* TRACKS
-        let mut tracks: HashMap<usize, usize> = HashMap::new();
+        // ********* CHANNELS
+        let mut channels: HashMap<usize, usize> = HashMap::new();
         for (i, offset) in songs.iter().enumerate() {
             let file_offset = *offset as usize + 126 - self.load_adress;
             let mut track: Vec<u8> = vec![];
             let mut j = 0;
-            tracks.insert(file_offset, i);
+            channels.insert(file_offset, i);
             loop {
                 track.push(sidfile[file_offset + j]);
                 if sidfile[file_offset + j] == 0xfe || sidfile[file_offset + j] == 0xff {
@@ -108,19 +110,19 @@ impl<'a> OriginalSong<'a> {
                 j += 1;
             }
             println!("\n\n#[allow(dead_code)]");
-            println!("pub static TRACK_{}: [u8; {}] = {:?};", i, j + 1, track);
+            println!("pub static CHANNEL_{}: [u8; {}] = {:?};", i, j + 1, track);
         }
-        // println!("tracks={:?}", tracks);
+        // println!("channels={:?}", channels);
 
         if self.song_track_qty == 2 {
             println!("\n\n#[allow(dead_code)]");
-            println!("pub static TRACK_EMPTY: [u8; 1] = [255];");
+            println!("pub static CHANNEL_EMPTY: [u8; 1] = [255];");
         }
 
-        // ********* PRINT TRACKS
+        // ********* PRINT CHANNELS
         println!("\n\n#[allow(dead_code)]");
         println!(
-            "pub static TRACKS: [ &[&[u8];3]; {}] = [",
+            "pub static CHANNELS: [ &[&[u8];3]; {}] = [",
             self.song_list_qty
         );
         for i in 0..self.song_list_qty {
@@ -130,8 +132,8 @@ impl<'a> OriginalSong<'a> {
                     let voice0 = songs[i * self.song_track_qty] + 126 - self.load_adress;
                     let voice1 = songs[i * self.song_track_qty + 1] + 126 - self.load_adress;
                     println!(
-                        "    &[&TRACK_{},&TRACK_{},&TRACK_EMPTY],",
-                        tracks[&voice0], tracks[&voice1]
+                        "    &[&CHANNEL_{},&CHANNEL_{},&CHANNEL_EMPTY],",
+                        channels[&voice0], channels[&voice1]
                     );
                 }
                 _ => {
@@ -139,34 +141,34 @@ impl<'a> OriginalSong<'a> {
                     let voice1 = songs[i * self.song_track_qty + 1] + 126 - self.load_adress;
                     let voice2 = songs[i * self.song_track_qty + 2] + 126 - self.load_adress;
                     println!(
-                        "    &[&TRACK_{},&TRACK_{},&TRACK_{}],",
-                        tracks[&voice0], tracks[&voice1], tracks[&voice2]
+                        "    &[&CHANNEL_{},&CHANNEL_{},&CHANNEL_{}],",
+                        channels[&voice0], channels[&voice1], channels[&voice2]
                     );
                 }
             }
         }
         println!("];");
 
-        // ********* PATTERNS
-        let mut patterns: Vec<u16> = vec![];
+        // ********* TRACKS
+        let mut tracks: Vec<u16> = vec![];
         for i in 0..self.patt_qty {
             let offset_low_file = 126 + self.patt_ptl_offset - self.load_adress;
             let offset_high_file = 126 + self.patt_pth_offset - self.load_adress;
             let offset: u16 =
                 sidfile[offset_low_file + i] as u16 | (sidfile[offset_high_file + i] as u16) << 8;
-            patterns.push(offset);
+            tracks.push(offset);
         }
-        // println!("{:04X?}",patterns);
+        // println!("{:04X?}",tracks);
         println!("\n\n#[allow(dead_code)]");
-        println!("pub static PATTERNS: [&[u8]; {}] = [", self.patt_qty);
+        println!("pub static TRACKS: [&[u8]; {}] = [", self.patt_qty);
         for i in 0..self.patt_qty {
-            print!("&PATTERN_{},", i);
+            print!("&TRACK_{},", i);
         }
         println!("];");
 
-        // println!("pub static DEBUG_PATTERNS_OFFSET: [usize; {}] = {:#X?};", patterns.len(), patterns);
+        // println!("pub static DEBUG_TRACKS_OFFSET: [usize; {}] = {:#X?};", tracks.len(), tracks);
         for i in 0..self.patt_qty {
-            let file_offset = 126 + patterns[i] as usize - self.load_adress;
+            let file_offset = 126 + tracks[i] as usize - self.load_adress;
             let mut pattern: Vec<u8> = vec![];
             let mut j = 0;
             loop {
@@ -178,7 +180,7 @@ impl<'a> OriginalSong<'a> {
             }
             println!("#[allow(dead_code)]");
             println!(
-                "pub static PATTERN_{}: [u8; {}] = {:#X?};",
+                "pub static TRACK_{}: [u8; {}] = {:#X?};",
                 i,
                 pattern.len(),
                 pattern
@@ -224,19 +226,19 @@ impl<'a> OriginalSong<'a> {
                 sfx_note_dest: 0x{:02X},    // REAL: end note
             }}, ",
             sidfile[start],
-    
+
             sidfile[start+1] as u16|(sidfile[start+2] as u16)<<8,
             sidfile[start+3] as u16|(sidfile[start+4] as u16)<<8,
             sidfile[start+5],
             sidfile[start+6],
             sidfile[start+7],
-    
+
             sidfile[start+8] as u16|(sidfile[start+9] as u16)<<8,
             sidfile[start+10] as u16|(sidfile[start+11] as u16)<<8,
             sidfile[start+12],
             sidfile[start+13],
             sidfile[start+14],
-    
+
             sidfile[start+15],
             );
         }
@@ -348,7 +350,7 @@ pub static DATABASE: [OriginalSong; 14] = [
         name: "Delta",
         author: "Rob Hubbard",
         copyright: "1987 Thalamus",
-        compression_version: 30, // Compression _and_ pattern loop in tracks
+        compression_version: 30, // Compression _and_ pattern loop in channels
         load_adress: 0xBC00,
         song_track_qty: 3,
         song_list_offset: 0xC4F4,

@@ -6,44 +6,13 @@ use std::io::prelude::*;
 use std::{thread, time};
 
 use resid::{ChipModel, SamplingMethod, Sid};
-mod rhplayer;
-use rhplayer::RhPlayer;
 
-mod rhsongs;
-use rhsongs::RhSongs;
+use robrs::rhplayer::rhplayer::RhPlayer;
+use robrs::rhplayer::rhsongs::RhSongs;
+use robrs::song::*;
+use robrs::xm::convert::Convert;
 
-mod xm;
-use xm::convert::Convert;
 use xmrs::xm::xmmodule::XmModule;
-
-#[allow(non_snake_case)]
-mod song_ACE_II;
-#[allow(non_snake_case)]
-mod song_Commando;
-#[allow(non_snake_case)]
-mod song_Crazy_Comets;
-#[allow(non_snake_case)]
-mod song_Delta;
-#[allow(non_snake_case)]
-mod song_International_Karate;
-#[allow(non_snake_case)]
-mod song_Lightforce;
-#[allow(non_snake_case)]
-mod song_Monty_on_the_Run;
-#[allow(non_snake_case)]
-mod song_Sanxion_Song_1;
-#[allow(non_snake_case)]
-mod song_Sanxion_Song_2;
-#[allow(non_snake_case)]
-mod song_Spellbound;
-#[allow(non_snake_case)]
-mod song_The_Human_Race;
-#[allow(non_snake_case)]
-mod song_The_Last_V8;
-#[allow(non_snake_case)]
-mod song_Thing_on_a_Spring;
-#[allow(non_snake_case)]
-mod song_Zoids;
 
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
@@ -150,10 +119,10 @@ fn main() {
         if rhsongs.is_some() {
             rhsongs.unwrap().print_song(number);
             rhsongs.unwrap().write_midi(number);
-            rhsongs.unwrap().write_all_patterns();
-            rhsongs.unwrap().write_channel_patterns(0, 0);
-            rhsongs.unwrap().write_channel_patterns(0, 1);
-            rhsongs.unwrap().write_channel_patterns(0, 2);
+            rhsongs.unwrap().write_all_tracks();
+            rhsongs.unwrap().write_channel_tracks(0, 0);
+            rhsongs.unwrap().write_channel_tracks(0, 1);
+            rhsongs.unwrap().write_channel_tracks(0, 2);
         }
     } else if cli.xm {
         let (name, editor) = match cli.name.as_str() {

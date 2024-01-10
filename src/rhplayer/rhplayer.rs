@@ -3,17 +3,12 @@
   Rust rewrite: Sebastien Bechet
 */
 
+use super::residext::{SidExt, NOTE_FREQ_HEX};
+use super::rhsongs::Instrument;
 use resid::Sid;
 use std::ops::{BitAnd, BitOr};
-pub mod residext;
-use crate::rhsongs::Instrument;
-use residext::{SidExt, NOTE_FREQ_HEX};
 
 use super::rhsongs::RhSongs;
-
-pub mod note;
-pub mod noterh;
-pub mod patternrh;
 
 #[repr(u8)]
 #[derive(PartialEq)]
@@ -139,7 +134,7 @@ impl<'a> RhPlayer<'a> {
             sid: sid,
             songs: songs,
             instr_pw: vec![0; songs.instruments.len()],
-            current_tracks: songs.tracks[0],
+            current_tracks: songs.channels[0],
             posoffset: [0, 0, 0],
             patoffset: [0, 0, 0],
             patloop: [1, 1, 1],
@@ -229,7 +224,7 @@ impl<'a> RhPlayer<'a> {
             return;
         }
         // GET NOTE DATA
-        let current_pattern = self.songs.patterns[patnum];
+        let current_pattern = self.songs.tracks[patnum];
         self.portaval[track_idx] = 0;
         self.portaval20[track_idx] = 0;
         let mut pattern_idx = self.patoffset[track_idx] as usize;
@@ -728,7 +723,7 @@ impl<'a> RhPlayer<'a> {
         }
 
         for track_idx in (0..3).rev() {
-            let instr = &self.songs.instruments[self.instrnr[track_idx] as usize];
+            // let instr = &self.songs.instruments[self.instrnr[track_idx] as usize];
             // println!("instr.fx{}: {:08b}", track_idx, instr.fx);
 
             if self.counter_note != 0 && self.speed == self.resetspd {
@@ -847,9 +842,9 @@ impl<'a> RhPlayer<'a> {
 
     pub fn init(&mut self, song: usize) {
         self.sid.set_modvol(15);
-        if song < self.songs.tracks.len() {
+        if song < self.songs.channels.len() {
             // song
-            self.current_tracks = self.songs.tracks[song];
+            self.current_tracks = self.songs.channels[song];
             self.sid.set_resfilt(0);
             self.sid.set_ctrl(0, 0);
             self.sid.set_ctrl(1, 0);
@@ -859,7 +854,7 @@ impl<'a> RhPlayer<'a> {
         } else {
             // soundfx
             self.stop_music();
-            self.set_soundfx(song - self.songs.tracks.len());
+            self.set_soundfx(song - self.songs.channels.len());
         }
     }
 

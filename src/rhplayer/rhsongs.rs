@@ -7,9 +7,9 @@ use midly::{
     TrackEventKind,
 };
 // use std::ops::{BitAnd, BitOr};
-use super::rhplayer::note::Note;
+use super::note::Note;
 // use super::rhplayer::noterh::NoteRh;
-use super::rhplayer::patternrh::PatternRh;
+use super::patternrh::PatternRh;
 
 #[repr(C, packed)]
 pub struct SidT {
@@ -57,8 +57,8 @@ pub struct Instrument {
 pub struct RhSongs<'a> {
     pub version: usize,
     pub total: usize,
-    pub tracks: &'a [&'a [&'a [u8]; 3]],
-    pub patterns: &'a [&'a [u8]],
+    pub channels: &'a [&'a [&'a [u8]; 3]],
+    pub tracks: &'a [&'a [u8]],
     pub instruments: &'a [Instrument],
     pub soundfx: &'a [SoundFx],
     pub instrfx: &'a [InstrFx],
@@ -74,34 +74,34 @@ impl<'a> RhSongs<'a> {
         channel: usize,
         pattern_list_idx: usize,
     ) -> Option<Vec<Note>> {
-        let song = self.tracks[song_idx];
+        let song = self.channels[song_idx];
         let pattern_list = song[channel];
         let pattern_num = pattern_list[pattern_list_idx] as usize;
-        if pattern_num > self.patterns.len() {
+        if pattern_num > self.tracks.len() {
             println!(
                 "Pattern seek error: idx:{}, channel:{}, pattern_list_idx:{}, {}/{}?",
                 song_idx,
                 channel,
                 pattern_list_idx,
                 pattern_num,
-                self.patterns.len()
+                self.tracks.len()
             );
             return None;
         }
-        let pattern = self.patterns[pattern_num];
+        let pattern = self.tracks[pattern_num];
         let pattern = Vec::uncompress(pattern, self.version);
         return pattern;
     }
 
     pub fn get_track_len(&self, song_idx: usize, channel: usize) -> usize {
-        let song = self.tracks[song_idx];
+        let song = self.channels[song_idx];
         return song[channel].len() - 1;
     }
 
     #[allow(dead_code)]
     pub fn is_track_restart(&self, song_idx: usize, channel: usize) -> bool {
         let len = self.get_track_len(song_idx, channel);
-        let song = self.tracks[song_idx];
+        let song = self.channels[song_idx];
         let pattern_list = song[channel];
         let state = pattern_list[len] as usize;
         // In track:
@@ -111,21 +111,21 @@ impl<'a> RhSongs<'a> {
     }
 
     pub fn get_song_channel(&self, song_idx: usize, channel: usize) -> Vec<Option<Vec<Note>>> {
-        let mut patterns: Vec<Option<Vec<Note>>> = vec![];
+        let mut tracks: Vec<Option<Vec<Note>>> = vec![];
         let len = self.get_track_len(song_idx, channel);
         for i in 0..len {
-            patterns.push(self.get_pattern(song_idx, channel, i));
+            tracks.push(self.get_pattern(song_idx, channel, i));
         }
-        return patterns;
+        return tracks;
     }
 
     pub fn get_song(&self, song_idx: usize) -> [Vec<Option<Vec<Note>>>; 3] {
-        let mut patterns: [Vec<Option<Vec<Note>>>; 3] = [vec![], vec![], vec![]];
+        let mut tracks: [Vec<Option<Vec<Note>>>; 3] = [vec![], vec![], vec![]];
         for channel in 0..3 {
             let mut p = self.get_song_channel(song_idx, channel);
-            patterns[channel].append(&mut p);
+            tracks[channel].append(&mut p);
         }
-        return patterns;
+        return tracks;
     }
 
     #[allow(dead_code)]
@@ -138,8 +138,8 @@ impl<'a> RhSongs<'a> {
     }
 
     pub fn print_song(&self, song_idx: usize) {
-        let patterns = self.get_song(song_idx);
-        println!("{:#?}", patterns);
+        let tracks = self.get_song(song_idx);
+        println!("{:#?}", tracks);
     }
 
     // try to detect
@@ -284,24 +284,24 @@ impl<'a> RhSongs<'a> {
     }
 
     pub fn get_song_midly<'b>(&self, song_idx: usize) -> Vec<Track<'b>> {
-        let patterns = self.get_song(song_idx);
-        let mut tracks: Vec<Track<'b>> = vec![vec![], vec![], vec![]];
+        let tracks = self.get_song(song_idx);
+        let mut channels: Vec<Track<'b>> = vec![vec![], vec![], vec![]];
 
         let mut delta_start = 0;
-        for (ch, p) in patterns.iter().enumerate() {
+        for (ch, p) in tracks.iter().enumerate() {
             let (mut track, delta_next) = self.get_track_midly(delta_start, ch as u8, p);
             delta_start = delta_next;
-            tracks[ch].append(&mut track);
-            tracks[ch].push(TrackEvent {
+            channels[ch].append(&mut track);
+            channels[ch].push(TrackEvent {
                 delta: num::u28::new(0),
                 kind: TrackEventKind::Meta(MetaMessage::EndOfTrack),
             });
         }
-        return tracks;
+        return channels;
     }
 
     pub fn write_midi(&self, song_idx: usize) {
-        let patterns = self.get_song_midly(song_idx);
+        let tracks = self.get_song_midly(song_idx);
         let header = Header {
             format: Format::Parallel,
             // timing: Timing::Metrical(num::u15::new(480)),
@@ -313,23 +313,23 @@ impl<'a> RhSongs<'a> {
         // let te1 = TrackEvent { delta: num::u28::new(0), kind: TrackEventKind::Meta(MetaMessage::Copyright(b"Rob Hubbard"))};
         // track0.push(te0);
         // track0.push(te1);
-        // smf.tracks.push(track0);
+        // smf.channels.push(track0);
 
         for i in 0..3 {
-            let te = &patterns[i];
+            let te = &tracks[i];
             smf.tracks.push(te.to_vec());
         }
         smf.save("all.mid").unwrap();
     }
 
-    pub fn write_all_patterns(&self) {
+    pub fn write_all_tracks(&self) {
         let header = Header {
             format: Format::Parallel,
             // timing: Timing::Metrical(num::u15::new(480)),
             timing: Timing::Timecode(Fps::Fps25, 4),
         };
-        for i in 0..self.patterns.len() {
-            let p = vec![Vec::uncompress(self.patterns[i], self.version)];
+        for i in 0..self.tracks.len() {
+            let p = vec![Vec::uncompress(self.tracks[i], self.version)];
             let (mut track, _delta_next) = self.get_track_midly(0, 0, &p);
             track.push(TrackEvent {
                 delta: num::u28::new(0),
@@ -343,7 +343,7 @@ impl<'a> RhSongs<'a> {
         }
     }
 
-    pub fn write_channel_patterns(&self, song_idx: usize, channel: usize) {
+    pub fn write_channel_tracks(&self, song_idx: usize, channel: usize) {
         let header = Header {
             format: Format::SingleTrack,
             timing: Timing::Timecode(Fps::Fps25, 4),

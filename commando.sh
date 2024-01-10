@@ -1,2 +1,2 @@
 #!/bin/bash
-cargo run --bin robrs -- commando 0
+cargo run --bin main -- commando 0

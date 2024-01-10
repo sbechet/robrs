@@ -1,5 +1,5 @@
 use crate::rhplayer::patternrh::PatternRh;
-use crate::rhsongs::RhSongs;
+use crate::rhplayer::rhsongs::RhSongs;
 
 use xmrs::module::Pattern;
 use xmrs::patternslot::PatternSlot;
@@ -15,9 +15,9 @@ pub struct ChannelIterator<'a> {
 impl<'a> ChannelIterator<'a> {
     pub fn new(song: &'a RhSongs, number: usize) -> Self {
         let (ch0, ch1, ch2) = (
-            song.tracks[number][0],
-            song.tracks[number][1],
-            song.tracks[number][2],
+            song.channels[number][0],
+            song.channels[number][1],
+            song.channels[number][2],
         );
 
         ChannelIterator {
@@ -36,14 +36,14 @@ impl<'a> ChannelIterator<'a> {
     pub fn convert_tracks(song: &RhSongs) -> Vec<Vec<PatternSlot>> {
         let mut pss: Vec<Vec<PatternSlot>> = vec![];
 
-        for (idx, pattern) in song.patterns.into_iter().enumerate() {
+        for (_idx, pattern) in song.tracks.into_iter().enumerate() {
             let r = Vec::uncompress(pattern, song.version);
             match r {
                 Some(d) => {
                     // print!("==========\ntrack {}: ", idx);
                     // println!("{:#?}",d);
                     // print!("track={}, ", idx);
-                    let mut track: Vec<PatternSlot> = Self::note2rows(&d);
+                    let track: Vec<PatternSlot> = Self::note2rows(&d);
                     // println!("idx={}, len={}",idx, track.len());
                     // println!("{:#?}", pattern[0]);
                     pss.push(track.clone());
@@ -92,8 +92,8 @@ impl<'a> ChannelIterator<'a> {
     }
 
     fn note2rows(d: &Vec<crate::rhplayer::note::Note>) -> Vec<PatternSlot> {
-        let mut total_len = 0;
-        let (min_delay, max_delay) = Self::get_min_max_len(&d);
+        // let mut total_len = 0;
+        let (min_delay, _max_delay) = Self::get_min_max_len(&d);
         let mut r: Vec<PatternSlot> = vec![];
         let psd = PatternSlot::default();
 
@@ -123,7 +123,7 @@ impl<'a> ChannelIterator<'a> {
             };
             r.push(ps);
             let delay = (n.length + 1) / min_delay;
-            total_len += delay;
+            // total_len += delay;
             for _i in 0..(delay - 1) {
                 r.push(psd);
             }

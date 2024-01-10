@@ -1,6 +1,6 @@
-use ahash::{AHashMap, AHasher, RandomState};
-use std::collections::HashMap;
-use std::hash::BuildHasher;
+use ahash::{AHashMap, RandomState};
+// use std::collections::HashMap;
+// use std::hash::BuildHasher;
 use std::sync::Arc;
 
 use std::fs::File;
@@ -9,21 +9,21 @@ use std::io::Write;
 use super::channel_iterator::ChannelIterator;
 
 use xmrs::module::Module;
-use xmrs::module::Pattern;
+// use xmrs::module::Pattern;
 use xmrs::prelude::*;
 use xmrs::xm::xp_pattern::XpPattern;
 use xmrs::xm::xt_track::XtTrack;
 
-use xmrs::instr_default::InstrDefault;
-use xmrs::instr_robsid::InstrRobSid;
-use xmrs::instr_sid::InstrSid;
+// use xmrs::instr_default::InstrDefault;
+// use xmrs::instr_robsid::InstrRobSid;
+// use xmrs::instr_sid::InstrSid;
 use xmrs::instrument::{Instrument, InstrumentType};
 
 use xmrs::patternslot::PatternSlot;
-use xmrs::xm::xmpatternslot::XmPatternSlot;
+// use xmrs::xm::xmpatternslot::XmPatternSlot;
 
-use crate::rhplayer::patternrh::PatternRh;
-use crate::rhsongs::RhSongs;
+// use crate::rhplayer::patternrh::PatternRh;
+use crate::rhplayer::rhsongs::RhSongs;
 
 pub struct Convert;
 
@@ -209,6 +209,7 @@ impl Convert {
     }
 
     pub fn convert(name: String, editor: String, song: &RhSongs, number: usize) -> Module {
+        // TODO/BUG: iterator no working! each channel is fully independant!
         let ci = ChannelIterator::new(song, number);
 
         for (idx, track) in ci.tracks.clone().into_iter().enumerate() {
@@ -219,8 +220,8 @@ impl Convert {
 
         // Step #1: map(hash,pattern)
         let mut map_hash_to_pattern: AHashMap<u64, Vec<Vec<PatternSlot>>> = AHashMap::new();
-        for (idx, one_pattern) in ci.into_iter().enumerate() {
-            let (hash, data) = Self::serialize_xp_pattern(&one_pattern).unwrap();
+        for (_idx, one_pattern) in ci.into_iter().enumerate() {
+            let (hash, _data) = Self::serialize_xp_pattern(&one_pattern).unwrap();
             map_hash_to_pattern.insert(hash, one_pattern);
             // println!("{} {} {:#?}", hash, idx, one_pattern);
         }

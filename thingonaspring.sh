@@ -1,2 +1,2 @@
 #!/bin/bash
-cargo run --bin robrs -- thingonaspring 0
+cargo run --bin main -- thingonaspring 0

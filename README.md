@@ -2,11 +2,11 @@ Attempt to rewrite Rob Hubbard player reversing all SIDs.
 
 THIS IS A BIG AND UGLY HACK
 
-To play: `cargo run --bin robrs -- --help`.
+To play: `cargo run --bin main -- --help`.
 
 For the record, in songs, there is a bug concerning notes outside frequency conversion table.
 
-Help Welcome: copy and add `OriginalSong` in `DATABASE` array (see `bin/database.rs`).
+Help Welcome: copy and add `OriginalSong` in `DATABASE` array (see `src/bin/siddump.rs`).
 
 - [x] 0 - Monty on the Run (1985 Gremlin Graphics)
 - [x] 1 - Delta (1987)

@@ -1,2 +1,2 @@
 #!/bin/bash
-cargo run --bin robrs -- montyontherun 0 true
+cargo run --bin main -- montyontherun 0 true

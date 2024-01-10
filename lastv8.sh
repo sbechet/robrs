@@ -1,2 +1,2 @@
 #!/bin/bash
-cargo run --bin robrs -- lastv8 0
+cargo run --bin main -- lastv8 0
