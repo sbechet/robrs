@@ -16,3 +16,4 @@ serde = { version = "1", features = ["derive"] }
 bincode = "1"
 xmrs = { path = "../xmrs" }
 ahash = "0.8.7"
+wav = "1.0.0"

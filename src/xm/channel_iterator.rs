@@ -1,4 +1,4 @@
-use crate::rhplayer::patternrh::PatternRh;
+use crate::rhplayer::trackrh::TrackRh;
 use crate::rhplayer::rhsongs::RhSongs;
 
 use xmrs::module::Pattern;

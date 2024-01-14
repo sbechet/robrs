@@ -1,11 +1,11 @@
 use super::note::Note;
 use super::noterh::NoteRh;
 
-pub trait PatternRh {
+pub trait TrackRh {
     fn uncompress(pattern: &[u8], version: usize) -> Option<Vec<Note>>;
 }
 
-impl PatternRh for Vec<Note> {
+impl TrackRh for Vec<Note> {
     fn uncompress(pattern: &[u8], version: usize) -> Option<Vec<Note>> {
         let mut output = Self::new();
         let mut idx = 0;

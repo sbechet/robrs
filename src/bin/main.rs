@@ -21,6 +21,8 @@ struct Cli {
     name: String,
     /// song number, from 0 to ...
     number: usize,
+    #[arg(short = 'e', long, default_value = "false")]
+    experimental: bool,
     #[arg(short = 'm', long, default_value = "false")]
     midi: bool,
     #[arg(short = 'x', long, default_value = "false")]
@@ -140,6 +142,8 @@ fn main() {
         let mut file = File::create(format!("{}.xm", name)).unwrap();
         file.write_all(&xmodule2_se).unwrap();
         println!("Save XM file");
+    } else if cli.experimental {
+        
     } else {
         sidplay(rhsongs, number);
     }

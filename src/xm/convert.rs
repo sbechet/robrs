@@ -22,8 +22,10 @@ use xmrs::instrument::{Instrument, InstrumentType};
 use xmrs::patternslot::PatternSlot;
 // use xmrs::xm::xmpatternslot::XmPatternSlot;
 
-// use crate::rhplayer::patternrh::PatternRh;
+// use crate::rhplayer::TrackRh::TrackRh;
 use crate::rhplayer::rhsongs::RhSongs;
+
+use crate::tools::pulse_wave::PulseWave;
 
 pub struct Convert;
 
@@ -38,15 +40,15 @@ impl Convert {
         // 1 : *sync*hronize with voice 3
         // 0 : gate
         let name = if song.instruments[number].ctrl_register & 0b1000_0000 == 0b1000_0000 {
-            "noise"
+            "N"
         } else if song.instruments[number].ctrl_register & 0b0100_0000 == 0b0100_0000 {
-            "pulse"
+            "P"
         } else if song.instruments[number].ctrl_register & 0b0010_0000 == 0b0010_0000 {
-            "sawtooth"
+            "S"
         } else if song.instruments[number].ctrl_register & 0b0001_0000 == 0b0001_0000 {
-            "triangle"
+            "T"
         } else {
-            "nothing"
+            "E"
         };
 
         // 12 bits -> 0-4095 with 2048 for center
@@ -151,12 +153,21 @@ impl Convert {
         */
 
         let comment = format!(
-            "(pw:{},pd:{},ps:{},a:{},d:{},s:{},r:{},vd:{})",
-            pw, pulse_delay, pulsespeed, attack, decay, sustain, release, vibdepth
+            "a{}d{}s{}r{}vd{}",
+            attack, decay, sustain, release, vibdepth
         );
 
+        let pulse_wave = PulseWave::new(pw, pulsespeed, pulse_delay);
+        let loop_start = pulse_wave.get_loop_start();
+        let loop_end = pulse_wave.get_loop_end();
+
+        if name == "P" {
+            println!("cargo run --bin pulse -- -w {} -d {} -s {} pulse{}_{}_{}_", pw, pulse_delay, pulsespeed, 1+number, loop_start, loop_end);
+        }
+
+
         Instrument {
-            name: format!("{} {}", name, comment),
+            name: format!("{}/{}", name, comment),
             instr_type: InstrumentType::Empty,
             muted: false,
         }

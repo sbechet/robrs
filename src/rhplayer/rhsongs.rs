@@ -9,7 +9,7 @@ use midly::{
 // use std::ops::{BitAnd, BitOr};
 use super::note::Note;
 // use super::rhplayer::noterh::NoteRh;
-use super::patternrh::PatternRh;
+use super::trackrh::TrackRh;
 
 #[repr(C, packed)]
 pub struct SidT {
@@ -68,7 +68,7 @@ pub struct RhSongs<'a> {
 }
 
 impl<'a> RhSongs<'a> {
-    pub fn get_pattern(
+    pub fn get_track(
         &self,
         song_idx: usize,
         channel: usize,
@@ -76,21 +76,21 @@ impl<'a> RhSongs<'a> {
     ) -> Option<Vec<Note>> {
         let song = self.channels[song_idx];
         let pattern_list = song[channel];
-        let pattern_num = pattern_list[pattern_list_idx] as usize;
-        if pattern_num > self.tracks.len() {
+        let track_num = pattern_list[pattern_list_idx] as usize;
+        if track_num > self.tracks.len() {
             println!(
                 "Pattern seek error: idx:{}, channel:{}, pattern_list_idx:{}, {}/{}?",
                 song_idx,
                 channel,
                 pattern_list_idx,
-                pattern_num,
+                track_num,
                 self.tracks.len()
             );
             return None;
         }
-        let pattern = self.tracks[pattern_num];
-        let pattern = Vec::uncompress(pattern, self.version);
-        return pattern;
+        let track = self.tracks[track_num];
+        let track = Vec::uncompress(track, self.version);
+        return track;
     }
 
     pub fn get_track_len(&self, song_idx: usize, channel: usize) -> usize {
@@ -114,7 +114,7 @@ impl<'a> RhSongs<'a> {
         let mut tracks: Vec<Option<Vec<Note>>> = vec![];
         let len = self.get_track_len(song_idx, channel);
         for i in 0..len {
-            tracks.push(self.get_pattern(song_idx, channel, i));
+            tracks.push(self.get_track(song_idx, channel, i));
         }
         return tracks;
     }
@@ -130,7 +130,7 @@ impl<'a> RhSongs<'a> {
 
     #[allow(dead_code)]
     pub fn print_pattern(&self, song_idx: usize, channel: usize, pattern_list_idx: usize) {
-        let pattern = self.get_pattern(song_idx, channel, pattern_list_idx);
+        let pattern = self.get_track(song_idx, channel, pattern_list_idx);
         println!(
             "song:{}, ch:{}, idx:{} = {:?}",
             song_idx, channel, pattern_list_idx, pattern
@@ -251,7 +251,7 @@ impl<'a> RhSongs<'a> {
                         channel: num::u4::new(dest_chan),
                         message: MidiMessage::NoteOn {
                             key: num::u7::new(n.value),
-                            vel: num::u7::new(100),
+                            vel: num::u7::new(64),
                         },
                     };
                     let te = TrackEvent {
@@ -268,7 +268,7 @@ impl<'a> RhSongs<'a> {
                         channel: num::u4::new(dest_chan),
                         message: MidiMessage::NoteOff {
                             key: num::u7::new(n.value),
-                            vel: num::u7::new(80),
+                            vel: num::u7::new(0),
                         },
                     };
                     let te = TrackEvent {
@@ -326,7 +326,7 @@ impl<'a> RhSongs<'a> {
         let header = Header {
             format: Format::Parallel,
             // timing: Timing::Metrical(num::u15::new(480)),
-            timing: Timing::Timecode(Fps::Fps25, 4),
+            timing: Timing::Timecode(Fps::Fps25, 1),
         };
         for i in 0..self.tracks.len() {
             let p = vec![Vec::uncompress(self.tracks[i], self.version)];
@@ -337,9 +337,9 @@ impl<'a> RhSongs<'a> {
             });
             let mut smf = Smf::new(header);
             smf.tracks.push(track);
-            println!("### Pattern_{:03} : ", i);
+            println!("### Track_{:02} : ", i);
             println!("{:#?}", p);
-            smf.save(format!("pattern_{:03}.mid", i)).unwrap();
+            smf.save(format!("track_{:02}.mid", i)).unwrap();
         }
     }
 
