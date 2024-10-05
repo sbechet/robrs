@@ -426,7 +426,7 @@ pub static DATABASE: [OriginalSong; 14] = [
         song_list_qty: 3,
         patt_ptl_offset: 0x87A9,
         patt_pth_offset: 0x87C6,
-        patt_qty: 29,
+        patt_qty: 28,
         instr_offset: 0x85A1,
         instr_qty: 19,
         fx_v1_offset: 0x8699,
